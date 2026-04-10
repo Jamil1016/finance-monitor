@@ -168,8 +168,10 @@ export default function IncomePage() {
       otherDeductions: String(inc.otherDeductions),
       netPay: String(inc.netPay),
     });
-    setShowManual(true);
     setScanResult(null);
+    setShowManual(true);
+    // Scroll to top so form is visible
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
   };
 
   const handleDelete = async (id: string) => {
@@ -241,58 +243,60 @@ export default function IncomePage() {
         )}
       </div>
 
-      {/* Scan Result / Manual Entry Form */}
+      {/* Scan Result / Manual Entry Form - as MODAL */}
       {(scanResult || showManual) && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {scanResult && <Check size={18} className="text-green-500" />}
-              <h3 className="font-semibold text-slate-900">
-                {scanResult ? 'Scanned Data - Review & Save' : editingId ? 'Edit Income Record' : 'Manual Entry'}
-              </h3>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={resetForm}>
+          <div className="bg-white w-full md:w-[480px] md:rounded-2xl rounded-t-2xl p-5 pb-8 mb-0 md:mb-0 modal-content max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                {scanResult && <Check size={18} className="text-green-500" />}
+                <h3 className="font-semibold text-slate-900">
+                  {scanResult ? 'Scanned Data - Review & Save' : editingId ? 'Edit Income Record' : 'Add Income'}
+                </h3>
+              </div>
+              <button onClick={resetForm} className="text-xs text-slate-400 hover:text-slate-600">Cancel</button>
             </div>
-            <button onClick={resetForm} className="text-xs text-slate-400 hover:text-slate-600">Cancel</button>
+
+            {scanResult?.employerName && (
+              <p className="text-xs text-slate-500 mb-3">From: {scanResult.employerName} | Period: {scanResult.payPeriod}</p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2"><FormField label="Pay Period (Month)" field="month" /></div>
+
+              <div className="col-span-2 pt-2">
+                <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Compensation</p>
+              </div>
+              <FormField label="Basic Pay" field="basicPay" />
+              <FormField label="Allowances" field="allowances" />
+              <FormField label="Overtime" field="overtime" />
+              <FormField label="Holiday Pay" field="holidayPay" />
+              <FormField label="Night Diff (NSD)" field="nsd" />
+              <FormField label="De Minimis" field="deMinimis" />
+              <div className="col-span-2">
+                <FormField label="Gross Pay" field="grossPay" />
+              </div>
+
+              <div className="col-span-2 pt-2">
+                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">Deductions</p>
+              </div>
+              <FormField label="SSS" field="sss" color="text-red-600" />
+              <FormField label="PhilHealth" field="philhealth" color="text-red-600" />
+              <FormField label="Pag-IBIG" field="pagibig" color="text-red-600" />
+              <FormField label="Withholding Tax" field="tax" color="text-red-600" />
+              <div className="col-span-2">
+                <FormField label="Other Deductions" field="otherDeductions" color="text-red-600" />
+              </div>
+
+              <div className="col-span-2 pt-2 border-t border-slate-100">
+                <FormField label="Net Pay (Take Home)" field="netPay" color="text-green-600" />
+              </div>
+            </div>
+
+            <button onClick={handleSave} className="w-full mt-4 text-white rounded-xl py-3 font-semibold transition-opacity hover:opacity-90 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary }}>
+              <Check size={18} /> {editingId ? 'Update Record' : 'Save Income Record'}
+            </button>
           </div>
-
-          {scanResult?.employerName && (
-            <p className="text-xs text-slate-500">From: {scanResult.employerName} | Period: {scanResult.payPeriod}</p>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2"><FormField label="Pay Period (Month)" field="month" /></div>
-
-            <div className="col-span-2 pt-2">
-              <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">Compensation</p>
-            </div>
-            <FormField label="Basic Pay" field="basicPay" />
-            <FormField label="Allowances" field="allowances" />
-            <FormField label="Overtime" field="overtime" />
-            <FormField label="Holiday Pay" field="holidayPay" />
-            <FormField label="Night Diff (NSD)" field="nsd" />
-            <FormField label="De Minimis" field="deMinimis" />
-            <div className="col-span-2">
-              <FormField label="Gross Pay" field="grossPay" />
-            </div>
-
-            <div className="col-span-2 pt-2">
-              <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">Deductions</p>
-            </div>
-            <FormField label="SSS" field="sss" color="text-red-600" />
-            <FormField label="PhilHealth" field="philhealth" color="text-red-600" />
-            <FormField label="Pag-IBIG" field="pagibig" color="text-red-600" />
-            <FormField label="Withholding Tax" field="tax" color="text-red-600" />
-            <div className="col-span-2">
-              <FormField label="Other Deductions" field="otherDeductions" color="text-red-600" />
-            </div>
-
-            <div className="col-span-2 pt-2 border-t border-slate-100">
-              <FormField label="Net Pay (Take Home)" field="netPay" color="text-green-600" />
-            </div>
-          </div>
-
-          <button onClick={handleSave} className="w-full text-white rounded-xl py-3 font-semibold transition-opacity hover:opacity-90 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary }}>
-            <Check size={18} /> {editingId ? 'Update Record' : 'Save Income Record'}
-          </button>
         </div>
       )}
 
