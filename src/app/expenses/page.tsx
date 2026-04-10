@@ -104,8 +104,8 @@ export default function ExpensesPage() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="bg-white w-full md:w-[440px] md:rounded-2xl rounded-t-2xl p-6 space-y-4 modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowModal(false)}>
+          <div className="bg-white w-full md:w-[440px] md:rounded-2xl rounded-t-2xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-slate-900">Add Expense</h2>
             <div>
               <label className="text-xs text-slate-500 font-medium">Amount (PHP)</label>

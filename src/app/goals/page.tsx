@@ -112,8 +112,8 @@ export default function GoalsPage() {
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowAdd(false)}>
-          <div className="bg-white w-full md:w-[440px] md:rounded-2xl rounded-t-2xl p-6 space-y-4 modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowAdd(false)}>
+          <div className="bg-white w-full md:w-[440px] md:rounded-2xl rounded-t-2xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-slate-900">New Savings Goal</h2>
             <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Goal name" className="w-full border border-slate-200 rounded-lg py-2.5 px-3 text-sm outline-none focus:border-blue-500" autoFocus />
             <div>
