@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
 import {
   LayoutDashboard,
   Receipt,
   PieChart,
   Target,
   Wallet,
+  LogOut,
 } from 'lucide-react';
 
 const navItems = [
@@ -20,6 +22,8 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+  const displayName = user?.user_metadata?.display_name || 'User';
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-r border-slate-200 h-screen sticky top-0">
@@ -49,13 +53,16 @@ export default function Sidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-slate-100">
-        <div className="bg-blue-50 rounded-xl p-4">
-          <p className="text-xs font-semibold text-blue-800">Savings Goal</p>
-          <p className="text-lg font-bold text-blue-600 mt-1">Track your progress</p>
-          <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
-            <div className="bg-blue-600 h-2 rounded-full progress-bar" style={{ width: '0%' }} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-sm font-medium text-slate-700 truncate">{displayName}</span>
           </div>
-          <p className="text-xs text-blue-500 mt-1">Set up your goals to start</p>
+          <button onClick={signOut} className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title="Sign out">
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
     </aside>

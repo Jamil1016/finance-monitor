@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import Sidebar from '@/components/Sidebar';
-import BottomNav from '@/components/BottomNav';
+import { AuthProvider } from '@/lib/auth';
+import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
   title: 'FinTrack - Personal Finance Monitor',
@@ -30,15 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full bg-slate-50">
-        <div className="flex h-full">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-            <div className="max-w-5xl mx-auto px-4 py-6 md:px-8 md:py-8">
-              {children}
-            </div>
-          </main>
-        </div>
-        <BottomNav />
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );
