@@ -6,11 +6,11 @@ import { getItems, saveItems, KEYS } from '@/lib/storage';
 import { formatCurrency, getCurrentMonth, getMonthName, generateId } from '@/lib/utils';
 
 const DEFAULT_BUDGETS: BudgetCategory[] = [
-  { id: '1', name: 'Food & Groceries', budgeted: 6000, spent: 0, type: 'needs', icon: 'UtensilsCrossed' },
-  { id: '2', name: 'Utilities & Phone', budgeted: 2500, spent: 0, type: 'needs', icon: 'Zap' },
-  { id: '3', name: 'Personal Care', budgeted: 1500, spent: 0, type: 'needs', icon: 'Heart' },
-  { id: '4', name: 'Social & Leisure', budgeted: 3000, spent: 0, type: 'wants', icon: 'Users' },
-  { id: '5', name: 'Miscellaneous', budgeted: 5844, spent: 0, type: 'wants', icon: 'ShoppingBag' },
+  { id: '1', name: 'Food & Groceries', budgeted: 5000, spent: 0, type: 'needs', icon: 'UtensilsCrossed' },
+  { id: '2', name: 'Utilities & Phone', budgeted: 2000, spent: 0, type: 'needs', icon: 'Zap' },
+  { id: '3', name: 'Personal Care', budgeted: 1000, spent: 0, type: 'needs', icon: 'Heart' },
+  { id: '4', name: 'Social & Leisure', budgeted: 2000, spent: 0, type: 'wants', icon: 'Users' },
+  { id: '5', name: 'Miscellaneous', budgeted: 3000, spent: 0, type: 'wants', icon: 'ShoppingBag' },
 ];
 
 export default function BudgetPage() {

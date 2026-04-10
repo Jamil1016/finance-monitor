@@ -8,8 +8,8 @@ import { getItems, addItem, saveItems, KEYS } from '@/lib/storage';
 import { formatCurrency, formatShortDate, generateId, getCurrentMonth, getGreeting, getDaysRemaining, EXPENSE_CATEGORIES, CATEGORY_COLORS } from '@/lib/utils';
 
 const DEFAULT_ACCOUNTS: Account[] = [
-  { id: '1', name: 'BPI', balance: 46000, type: 'bank' },
-  { id: '2', name: 'Maya', balance: 63000, type: 'ewallet' },
+  { id: '1', name: 'Bank Account', balance: 0, type: 'bank' },
+  { id: '2', name: 'E-Wallet', balance: 0, type: 'ewallet' },
 ];
 
 export default function Dashboard() {
@@ -32,7 +32,8 @@ export default function Dashboard() {
   }, []);
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
-  const savingsTarget = 400000;
+  const goals = getItems<{id:string;target:number;current:number}>(KEYS.GOALS);
+  const savingsTarget = goals.length > 0 ? goals[0].target : 100000;
   const savingsProgress = Math.min((totalBalance / savingsTarget) * 100, 100);
   const daysLeft = getDaysRemaining('2026-12-31');
 
@@ -41,7 +42,8 @@ export default function Dashboard() {
     (t) => t.date.startsWith(currentMonth) && t.type === 'expense'
   );
   const monthSpent = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const monthBudget = 18844;
+  const budgets = getItems<{budgeted:number}>(KEYS.BUDGETS);
+  const monthBudget = budgets.length > 0 ? budgets.reduce((s, b) => s + b.budgeted, 0) : 20000;
   const monthRemaining = monthBudget - monthSpent;
 
   const recentTransactions = transactions.slice(0, 5);
@@ -76,7 +78,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">{getGreeting()}, Jamil</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{getGreeting()}</h1>
         <p className="text-sm text-slate-500 mt-1">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
@@ -86,7 +88,7 @@ export default function Dashboard() {
       <div className="bg-gradient-to-br from-blue-800 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-blue-200 text-sm font-medium">2026 Savings Goal</p>
+            <p className="text-blue-200 text-sm font-medium">Savings Goal</p>
             <p className="text-3xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
           </div>
           <div className="text-right">

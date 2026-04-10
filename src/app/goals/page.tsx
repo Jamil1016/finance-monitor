@@ -7,9 +7,8 @@ import { getItems, saveItems, addItem, deleteItem, KEYS } from '@/lib/storage';
 import { formatCurrency, generateId, getDaysRemaining } from '@/lib/utils';
 
 const DEFAULT_GOALS: SavingsGoal[] = [
-  { id: '1', name: '2026 Savings Target', target: 400000, current: 51000, deadline: '2026-12-31', color: '#1e40af' },
-  { id: '2', name: 'Emergency Fund', target: 150000, current: 0, deadline: '2028-06-30', color: '#059669' },
-  { id: '3', name: 'Pag-IBIG MP2', target: 120000, current: 0, deadline: '2031-04-01', color: '#7c3aed' },
+  { id: '1', name: 'Savings Target', target: 100000, current: 0, deadline: '2026-12-31', color: '#1e40af' },
+  { id: '2', name: 'Emergency Fund', target: 50000, current: 0, deadline: '2027-12-31', color: '#059669' },
 ];
 
 export default function GoalsPage() {

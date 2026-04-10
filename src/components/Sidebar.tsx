@@ -50,12 +50,12 @@ export default function Sidebar() {
       </nav>
       <div className="p-4 border-t border-slate-100">
         <div className="bg-blue-50 rounded-xl p-4">
-          <p className="text-xs font-semibold text-blue-800">2026 Savings Goal</p>
-          <p className="text-lg font-bold text-blue-600 mt-1">₱400,000</p>
+          <p className="text-xs font-semibold text-blue-800">Savings Goal</p>
+          <p className="text-lg font-bold text-blue-600 mt-1">Track your progress</p>
           <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
-            <div className="bg-blue-600 h-2 rounded-full progress-bar" style={{ width: '12.75%' }} />
+            <div className="bg-blue-600 h-2 rounded-full progress-bar" style={{ width: '0%' }} />
           </div>
-          <p className="text-xs text-blue-500 mt-1">₱51,000 saved</p>
+          <p className="text-xs text-blue-500 mt-1">Set up your goals to start</p>
         </div>
       </div>
     </aside>

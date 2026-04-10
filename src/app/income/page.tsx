@@ -6,11 +6,7 @@ import { MonthlyIncome } from '@/lib/types';
 import { getItems, saveItems, KEYS } from '@/lib/storage';
 import { formatCurrency, generateId } from '@/lib/utils';
 
-const SAMPLE_INCOME: MonthlyIncome[] = [
-  { id: '1', month: '2026-01', basicPay: 50000, allowances: 6000, overtime: 6695.41, deMinimis: 0, holidayPay: 689.66, nsd: 114.94, grossPay: 63500, sss: 1750, philhealth: 1250, pagibig: 200, tax: 7342.64, otherDeductions: 2286.34, netPay: 50671.03 },
-  { id: '2', month: '2026-02', basicPay: 50000, allowances: 6000, overtime: 8017.24, deMinimis: 0, holidayPay: 0, nsd: 804.60, grossPay: 64821.84, sss: 1750, philhealth: 1250, pagibig: 200, tax: 7690.35, otherDeductions: 2286.34, netPay: 51645.16 },
-  { id: '3', month: '2026-03', basicPay: 51750, allowances: 6000, overtime: 15108.62, deMinimis: 5000, holidayPay: 2379.31, nsd: 1427.58, grossPay: 81665.52, sss: 1750, philhealth: 1293.75, pagibig: 200, tax: 13592.93, otherDeductions: 2286.34, netPay: 65542.52 },
-];
+const SAMPLE_INCOME: MonthlyIncome[] = [];
 
 export default function IncomePage() {
   const [incomes, setIncomes] = useState<MonthlyIncome[]>([]);
@@ -28,9 +24,16 @@ export default function IncomePage() {
   const avgGross = incomes.length > 0 ? incomes.reduce((s, i) => s + i.grossPay, 0) / incomes.length : 0;
   const totalTax = incomes.reduce((s, i) => s + i.tax, 0);
 
-  // Tax projection for 2026
-  const annualTaxable = 656539;
-  const projectedTax = 22500 + 0.20 * (annualTaxable - 400000);
+  // Tax projection based on actual data
+  const avgMonthlyGross = avgGross > 0 ? avgGross : 0;
+  const annualGross = avgMonthlyGross * 12;
+  const annualDeductions = annualGross > 0 ? 90000 + 38400 : 0; // est. 13th month + contributions
+  const annualTaxable = Math.max(0, annualGross - annualDeductions);
+  let projectedTax = 0;
+  if (annualTaxable > 800000) projectedTax = 102500 + 0.25 * (annualTaxable - 800000);
+  else if (annualTaxable > 400000) projectedTax = 22500 + 0.20 * (annualTaxable - 400000);
+  else if (annualTaxable > 250000) projectedTax = 0.15 * (annualTaxable - 250000);
+  const taxBracket = annualTaxable > 800000 ? '800K-2M (25%)' : annualTaxable > 400000 ? '400K-800K (20%)' : annualTaxable > 250000 ? '250K-400K (15%)' : 'Below 250K (0%)';
 
   return (
     <div className="space-y-6">
@@ -68,7 +71,7 @@ export default function IncomePage() {
           </div>
           <div>
             <p className="text-blue-200 text-xs">Tax Bracket</p>
-            <p className="text-sm font-medium">400K-800K (20%)</p>
+            <p className="text-sm font-medium">{taxBracket}</p>
           </div>
           <div>
             <p className="text-blue-200 text-xs">YTD Tax Paid</p>
