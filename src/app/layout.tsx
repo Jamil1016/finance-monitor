@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
+import { ThemeProvider } from '@/lib/theme-context';
 import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
@@ -31,7 +32,9 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full bg-slate-50">
         <AuthProvider>
-          <AppShell>{children}</AppShell>
+          <ThemeProvider>
+            <AppShell>{children}</AppShell>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

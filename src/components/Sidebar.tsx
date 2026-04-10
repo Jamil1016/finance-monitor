@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from '@/lib/theme-context';
 import {
   LayoutDashboard,
   Receipt,
@@ -10,6 +11,7 @@ import {
   Target,
   Wallet,
   LogOut,
+  Palette,
 } from 'lucide-react';
 
 const navItems = [
@@ -23,13 +25,14 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { theme, togglePicker } = useTheme();
   const displayName = user?.user_metadata?.display_name || 'User';
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-r border-slate-200 h-screen sticky top-0">
       <div className="p-6 border-b border-slate-100">
-        <h1 className="text-2xl font-bold text-blue-800">
-          <span className="text-blue-500">Fin</span>Track
+        <h1 className="text-2xl font-bold" style={{ color: theme.primaryDark }}>
+          <span style={{ color: theme.primary }}>Fin</span>Track
         </h1>
         <p className="text-xs text-slate-400 mt-1">Personal Finance Monitor</p>
       </div>
@@ -42,9 +45,10 @@ export default function Sidebar() {
               href={href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 isActive
-                  ? 'bg-blue-50 text-blue-700 shadow-sm'
+                  ? 'shadow-sm'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
+              style={isActive ? { backgroundColor: theme.primaryBg, color: theme.primaryText } : {}}
             >
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
               {label}
@@ -52,10 +56,23 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t border-slate-100 space-y-3">
+        <button
+          onClick={togglePicker}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          <Palette size={18} />
+          Theme
+          <div className="ml-auto flex gap-1">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.primary }} />
+          </div>
+        </button>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+              style={{ backgroundColor: theme.primary }}
+            >
               {displayName.charAt(0).toUpperCase()}
             </div>
             <span className="text-sm font-medium text-slate-700 truncate">{displayName}</span>

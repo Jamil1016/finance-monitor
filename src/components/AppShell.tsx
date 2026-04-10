@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import AuthGuard from './AuthGuard';
+import ThemePicker from './ThemePicker';
 
 const PUBLIC_ROUTES = ['/login', '/signup'];
 
@@ -24,6 +25,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </main>
           <BottomNav />
+          <ThemePicker />
         </div>
       ) : (
         children

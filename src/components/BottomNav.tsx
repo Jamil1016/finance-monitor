@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from '@/lib/theme-context';
 import {
   LayoutDashboard,
   Receipt,
@@ -20,6 +21,7 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 safe-bottom z-50">
@@ -30,9 +32,8 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors ${
-                isActive ? 'text-blue-600' : 'text-slate-400'
-              }`}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors"
+              style={{ color: isActive ? theme.primary : '#94a3b8' }}
             >
               <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
               <span className={`text-[10px] ${isActive ? 'font-semibold' : 'font-medium'}`}>

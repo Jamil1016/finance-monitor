@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, TrendingUp, Wallet, CreditCard, ArrowRight } from 'lucide-react';
+import { Plus, TrendingUp, Wallet, CreditCard, ArrowRight, Palette } from 'lucide-react';
 import Link from 'next/link';
 import { Transaction, Account, SavingsGoal, BudgetCategory } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from '@/lib/theme-context';
 import * as db from '@/lib/database';
 import { formatCurrency, formatShortDate, getCurrentMonth, getGreeting, getDaysRemaining, EXPENSE_CATEGORIES, CATEGORY_COLORS } from '@/lib/utils';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { theme, togglePicker } = useTheme();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
@@ -66,15 +68,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">{getGreeting()}, {displayName}</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{getGreeting()}, {displayName}</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+        <button onClick={togglePicker} className="md:hidden p-2 rounded-xl hover:bg-slate-100" title="Change theme">
+          <Palette size={20} style={{ color: theme.primary }} />
+        </button>
       </div>
 
       {/* Savings Progress Card */}
-      <div className="bg-gradient-to-br from-blue-800 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
+      <div className="rounded-2xl p-6 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${theme.primaryDark}, ${theme.primary})` }}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-blue-200 text-sm font-medium">Savings Goal</p>
@@ -141,7 +148,7 @@ export default function Dashboard() {
 
       {/* Quick Add */}
       {!showQuickAdd ? (
-        <button onClick={() => setShowQuickAdd(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-4 font-semibold flex items-center justify-center gap-2 shadow-md transition-colors">
+        <button onClick={() => setShowQuickAdd(true)} className="w-full text-white rounded-xl py-4 font-semibold flex items-center justify-center gap-2 shadow-md transition-opacity hover:opacity-90" style={{ backgroundColor: theme.primary }}>
           <Plus size={20} /> Add Expense
         </button>
       ) : (
@@ -164,7 +171,7 @@ export default function Dashboard() {
           <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" className="w-full border border-slate-200 rounded-lg py-2.5 px-3 text-sm outline-none focus:border-blue-500" />
           <div className="flex gap-3">
             <button onClick={() => setShowQuickAdd(false)} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600">Cancel</button>
-            <button onClick={handleAddExpense} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">Add Expense</button>
+            <button onClick={handleAddExpense} className="flex-1 py-2.5 text-white rounded-lg text-sm font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: theme.primary }}>Add Expense</button>
           </div>
         </div>
       )}
