@@ -4,8 +4,10 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 const PROMPT = `Analyze this payslip and extract the following information. Return ONLY a valid JSON object with these exact fields (use 0 if a field is not found or shows a dash):
 
+IMPORTANT: For the "month" field, use the PAY PERIOD month (not the pay date). For example if the pay period is "Mar 16-31, 2026" but pay date is "April 10, 2026", the month should be "2026-03" (March, from the pay period).
+
 {
-  "month": "YYYY-MM format of the pay period",
+  "month": "YYYY-MM format based on the PAY PERIOD, not the pay date",
   "payPeriod": "the pay period text as shown",
   "basicPay": number,
   "allowances": number,

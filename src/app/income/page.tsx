@@ -136,11 +136,16 @@ export default function IncomePage() {
     setShowManual(false);
   };
 
+  const handleDelete = async (id: string) => {
+    await db.deleteMonthlyIncome(id);
+    setIncomes((prev) => prev.filter((i) => i.id !== id));
+  };
+
   const FormField = ({ label, field, color }: { label: string; field: keyof typeof form; color?: string }) => (
     <div>
       <label className="text-[10px] font-medium text-slate-400 uppercase">{label}</label>
       <input
-        type={field === 'month' ? 'text' : 'number'}
+        type={field === 'month' ? 'month' : 'number'}
         value={form[field]}
         onChange={(e) => setForm({ ...form, [field]: e.target.value })}
         placeholder={field === 'month' ? 'YYYY-MM' : '0.00'}
@@ -327,9 +332,14 @@ export default function IncomePage() {
                         <p className="text-xs text-slate-400">Gross: {formatCurrency(inc.grossPay)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-green-600">{formatCurrency(inc.netPay)}</p>
-                      <p className="text-[10px] text-red-400">-{formatCurrency(totalDed)} deductions</p>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">{formatCurrency(inc.netPay)}</p>
+                        <p className="text-[10px] text-red-400">-{formatCurrency(totalDed)} deductions</p>
+                      </div>
+                      <button onClick={() => handleDelete(inc.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 size={14} className="text-slate-300 hover:text-red-400" />
+                      </button>
                     </div>
                   </div>
 
