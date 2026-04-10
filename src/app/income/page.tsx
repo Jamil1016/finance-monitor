@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Calculator, Upload, Camera, Loader2, Check, Plus, Trash2, FileText } from 'lucide-react';
+import { Calculator, Upload, Camera, Loader2, Check, Plus, Trash2, FileText, Pencil } from 'lucide-react';
 import { MonthlyIncome } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
@@ -16,6 +16,7 @@ export default function IncomePage() {
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanError, setScanError] = useState('');
   const [showManual, setShowManual] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     month: '', basicPay: '', allowances: '', overtime: '', deMinimis: '',
     holidayPay: '', nsd: '', grossPay: '', sss: '', philhealth: '',
@@ -130,8 +131,15 @@ export default function IncomePage() {
       netPay: parseFloat(form.netPay) || 0,
     };
 
-    const saved = await db.addMonthlyIncome(inc);
-    if (saved) setIncomes((prev) => [saved, ...prev]);
+    if (editingId) {
+      const updated = await db.updateMonthlyIncome(editingId, inc);
+      if (updated) {
+        setIncomes((prev) => prev.map((i) => i.id === editingId ? updated : i));
+      }
+    } else {
+      const saved = await db.addMonthlyIncome(inc);
+      if (saved) setIncomes((prev) => [saved, ...prev]);
+    }
     resetForm();
   };
 
@@ -139,6 +147,29 @@ export default function IncomePage() {
     setForm({ month: '', basicPay: '', allowances: '', overtime: '', deMinimis: '', holidayPay: '', nsd: '', grossPay: '', sss: '', philhealth: '', pagibig: '', tax: '', otherDeductions: '', netPay: '' });
     setScanResult(null);
     setShowManual(false);
+    setEditingId(null);
+  };
+
+  const handleEdit = (inc: MonthlyIncome) => {
+    setEditingId(inc.id);
+    setForm({
+      month: inc.month,
+      basicPay: String(inc.basicPay),
+      allowances: String(inc.allowances),
+      overtime: String(inc.overtime),
+      deMinimis: String(inc.deMinimis),
+      holidayPay: String(inc.holidayPay),
+      nsd: String(inc.nsd),
+      grossPay: String(inc.grossPay),
+      sss: String(inc.sss),
+      philhealth: String(inc.philhealth),
+      pagibig: String(inc.pagibig),
+      tax: String(inc.tax),
+      otherDeductions: String(inc.otherDeductions),
+      netPay: String(inc.netPay),
+    });
+    setShowManual(true);
+    setScanResult(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -217,7 +248,7 @@ export default function IncomePage() {
             <div className="flex items-center gap-2">
               {scanResult && <Check size={18} className="text-green-500" />}
               <h3 className="font-semibold text-slate-900">
-                {scanResult ? 'Scanned Data - Review & Save' : 'Manual Entry'}
+                {scanResult ? 'Scanned Data - Review & Save' : editingId ? 'Edit Income Record' : 'Manual Entry'}
               </h3>
             </div>
             <button onClick={resetForm} className="text-xs text-slate-400 hover:text-slate-600">Cancel</button>
@@ -260,7 +291,7 @@ export default function IncomePage() {
           </div>
 
           <button onClick={handleSave} className="w-full text-white rounded-xl py-3 font-semibold transition-opacity hover:opacity-90 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary }}>
-            <Check size={18} /> Save Income Record
+            <Check size={18} /> {editingId ? 'Update Record' : 'Save Income Record'}
           </button>
         </div>
       )}
@@ -375,6 +406,9 @@ export default function IncomePage() {
                         <p className="text-lg font-bold text-green-600">{formatCurrency(inc.netPay)}</p>
                         <p className="text-[10px] text-red-400">-{formatCurrency(totalDed)} deductions</p>
                       </div>
+                      <button onClick={() => handleEdit(inc)} className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors">
+                        <Pencil size={14} className="text-slate-300 hover:text-blue-500" />
+                      </button>
                       <button onClick={() => handleDelete(inc.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 size={14} className="text-slate-300 hover:text-red-400" />
                       </button>

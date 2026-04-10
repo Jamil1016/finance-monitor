@@ -128,6 +128,16 @@ export async function addMonthlyIncome(inc: Omit<MonthlyIncome, 'id'>): Promise<
   return data ? { id: data.id, month: data.month, basicPay: Number(data.basic_pay), allowances: Number(data.allowances), overtime: Number(data.overtime), deMinimis: Number(data.de_minimis), holidayPay: Number(data.holiday_pay), nsd: Number(data.nsd), grossPay: Number(data.gross_pay), sss: Number(data.sss), philhealth: Number(data.philhealth), pagibig: Number(data.pagibig), tax: Number(data.tax), otherDeductions: Number(data.other_deductions), netPay: Number(data.net_pay) } : null;
 }
 
+export async function updateMonthlyIncome(id: string, inc: Omit<MonthlyIncome, 'id'>) {
+  const { data } = await supabase.from('monthly_income').update({
+    month: inc.month, basic_pay: inc.basicPay, allowances: inc.allowances,
+    overtime: inc.overtime, de_minimis: inc.deMinimis, holiday_pay: inc.holidayPay, nsd: inc.nsd,
+    gross_pay: inc.grossPay, sss: inc.sss, philhealth: inc.philhealth, pagibig: inc.pagibig,
+    tax: inc.tax, other_deductions: inc.otherDeductions, net_pay: inc.netPay,
+  }).eq('id', id).select().single();
+  return data ? { id: data.id, month: data.month, basicPay: Number(data.basic_pay), allowances: Number(data.allowances), overtime: Number(data.overtime), deMinimis: Number(data.de_minimis), holidayPay: Number(data.holiday_pay), nsd: Number(data.nsd), grossPay: Number(data.gross_pay), sss: Number(data.sss), philhealth: Number(data.philhealth), pagibig: Number(data.pagibig), tax: Number(data.tax), otherDeductions: Number(data.other_deductions), netPay: Number(data.net_pay) } as MonthlyIncome : null;
+}
+
 export async function deleteMonthlyIncome(id: string) {
   await supabase.from('monthly_income').delete().eq('id', id);
 }
