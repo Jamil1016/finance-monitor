@@ -28,9 +28,14 @@ export default function IncomePage() {
     db.getMonthlyIncomes().then(setIncomes);
   }, [user]);
 
-  const avgNet = incomes.length > 0 ? incomes.reduce((s, i) => s + i.netPay, 0) / incomes.length : 0;
-  const avgGross = incomes.length > 0 ? incomes.reduce((s, i) => s + i.grossPay, 0) / incomes.length : 0;
+  const totalNet = incomes.reduce((s, i) => s + i.netPay, 0);
+  const totalGross = incomes.reduce((s, i) => s + i.grossPay, 0);
   const totalTax = incomes.reduce((s, i) => s + i.tax, 0);
+  const totalSSS = incomes.reduce((s, i) => s + i.sss, 0);
+  const totalPH = incomes.reduce((s, i) => s + i.philhealth, 0);
+  const totalPI = incomes.reduce((s, i) => s + i.pagibig, 0);
+  const avgNet = incomes.length > 0 ? totalNet / incomes.length : 0;
+  const avgGross = incomes.length > 0 ? totalGross / incomes.length : 0;
 
   // Tax projection
   const annualGross = avgGross * 12;
@@ -263,6 +268,38 @@ export default function IncomePage() {
       {/* Summary Cards */}
       {incomes.length > 0 && (
         <>
+          {/* Totals */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Year-to-Date Totals</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center">
+                <p className="text-[10px] text-slate-400">Total Net</p>
+                <p className="text-sm font-bold text-green-600">{formatCurrency(totalNet)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-400">Total Gross</p>
+                <p className="text-sm font-bold text-slate-900">{formatCurrency(totalGross)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-400">Total Tax</p>
+                <p className="text-sm font-bold text-red-500">{formatCurrency(totalTax)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-400">Total SSS</p>
+                <p className="text-sm font-bold text-slate-700">{formatCurrency(totalSSS)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-400">Total PhilHealth</p>
+                <p className="text-sm font-bold text-slate-700">{formatCurrency(totalPH)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-400">Total Pag-IBIG</p>
+                <p className="text-sm font-bold text-slate-700">{formatCurrency(totalPI)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Averages */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center">
               <p className="text-[10px] text-slate-400 font-medium">Avg Net</p>
@@ -273,8 +310,8 @@ export default function IncomePage() {
               <p className="text-sm font-bold text-slate-900">{formatCurrency(avgGross)}</p>
             </div>
             <div className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center">
-              <p className="text-[10px] text-slate-400 font-medium">YTD Tax</p>
-              <p className="text-sm font-bold text-red-500">{formatCurrency(totalTax)}</p>
+              <p className="text-[10px] text-slate-400 font-medium">{incomes.length} Records</p>
+              <p className="text-sm font-bold text-slate-500">{incomes.length} payslips</p>
             </div>
           </div>
 
@@ -318,7 +355,8 @@ export default function IncomePage() {
         ) : (
           <div className="space-y-3">
             {incomes.map((inc) => {
-              const monthName = new Date(inc.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+              const [yr, mn] = inc.month.split('-').map(Number);
+              const monthName = new Date(yr, mn - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
               const totalDed = inc.sss + inc.philhealth + inc.pagibig + inc.tax + inc.otherDeductions;
               return (
                 <div key={inc.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
