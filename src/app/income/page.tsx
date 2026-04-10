@@ -62,7 +62,13 @@ export default function IncomePage() {
 
       const data = await res.json();
 
-      if (data.success && data.data) {
+      if (!res.ok || !data.success) {
+        setScanError(data.error || 'Scan failed. Try a clearer image.');
+        setScanning(false);
+        return;
+      }
+
+      if (data.data) {
         setScanResult(data.data);
         setForm({
           month: data.data.month || '',
@@ -80,8 +86,6 @@ export default function IncomePage() {
           otherDeductions: String(data.data.otherDeductions || 0),
           netPay: String(data.data.netPay || 0),
         });
-      } else {
-        setScanError(data.error || 'Failed to scan payslip');
       }
     } catch (err: any) {
       setScanError(err.message || 'Upload failed');
