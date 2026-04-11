@@ -35,6 +35,10 @@ export default function Dashboard() {
   const [weeklyData, setWeeklyData] = useState<{ day: string; amount: number }[]>([]);
   const [showFab, setShowFab] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [accName, setAccName] = useState('');
+  const [accBalance, setAccBalance] = useState('');
+  const [accType, setAccType] = useState('cash');
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
@@ -164,10 +168,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Accounts grid */}
+      {/* Accounts grid - sorted: cash, ewallet, bank, credit_card */}
       {accounts.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {accounts.map(a => {
+          {[...accounts].sort((a, b) => {
+            const order: Record<string, number> = { cash: 0, ewallet: 1, bank: 2, credit_card: 3 };
+            return (order[a.type] ?? 4) - (order[b.type] ?? 4);
+          }).map(a => {
             const isCC = a.type === 'credit_card';
             return (
               <div key={a.id} className="rounded-2xl p-3 card-white" style={isCC ? { border: '1px solid #fecaca' } : {}}>
@@ -184,10 +191,10 @@ export default function Dashboard() {
               </div>
             );
           })}
-          <Link href="/wallet" className="rounded-2xl p-3 flex flex-col items-center justify-center border border-dashed gap-1" style={{ borderColor: theme.primary + '40' }}>
+          <button onClick={() => setShowAddAccount(true)} className="rounded-2xl p-3 flex flex-col items-center justify-center border border-dashed gap-1" style={{ borderColor: theme.primary + '40' }}>
             <Plus size={18} style={{ color: theme.primary }} />
             <span className="text-[10px] font-medium" style={{ color: theme.primary }}>Add Account</span>
-          </Link>
+          </button>
         </div>
       )}
 
@@ -373,6 +380,52 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Add Account Modal */}
+      {showAddAccount && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowAddAccount(false)}>
+          <div className="bg-white w-full md:w-[400px] md:rounded-3xl rounded-t-3xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-slate-900">Add Account</h2>
+            <input type="text" value={accName} onChange={e => setAccName(e.target.value)} placeholder="Account name (e.g. BPI, Maya)" className="input-tinted w-full" autoFocus />
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>Type</label>
+              <div className="flex gap-2 mt-1.5">
+                {[{ t: 'cash', icon: '💵', label: 'Cash' }, { t: 'ewallet', icon: '📱', label: 'E-Wallet' }, { t: 'bank', icon: '🏦', label: 'Bank' }, { t: 'credit_card', icon: '💳', label: 'Credit Card' }].map(({ t, icon, label }) => (
+                  <button key={t} onClick={() => setAccType(t)}
+                    className="flex-1 flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all text-center"
+                    style={accType === t ? { outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', backgroundColor: theme.primaryBg } : { border: '1px solid #e2e8f0' }}>
+                    <span className="text-lg">{icon}</span>
+                    <span className="text-[9px] font-medium text-slate-600">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>
+                {accType === 'credit_card' ? 'Credit Limit (PHP)' : 'Balance (PHP)'}
+              </label>
+              <input type="number" value={accBalance} onChange={e => setAccBalance(e.target.value)} placeholder="0.00" className="w-full text-xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: theme.primary }} />
+              {accType === 'credit_card' && <p className="text-[9px] text-slate-400 mt-1">Balance starts at ₱0. Increases when you use the card.</p>}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowAddAccount(false)} className="flex-1 btn-pill border text-slate-600" style={{ borderColor: '#e2e8f0' }}>Cancel</button>
+              <button onClick={async () => {
+                if (!accName) return;
+                const icons: Record<string, string> = { cash: '💵', ewallet: '📱', bank: '🏦', credit_card: '💳' };
+                const colors: Record<string, string> = { cash: '#f59e0b', ewallet: '#10b981', bank: '#3b82f6', credit_card: '#ef4444' };
+                const isCC = accType === 'credit_card';
+                const acc = await db.addAccount({
+                  name: accName, balance: isCC ? 0 : (parseFloat(accBalance) || 0),
+                  creditLimit: isCC ? (parseFloat(accBalance) || 0) : 0, billingDay: 0,
+                  type: accType as any, icon: icons[accType] || '🏦', color: colors[accType] || '#3b82f6',
+                });
+                if (acc) setAccounts(prev => [...prev, acc]);
+                setAccName(''); setAccBalance(''); setAccType('cash'); setShowAddAccount(false);
+              }} className="flex-1 btn-pill text-white" style={{ backgroundColor: theme.primary }}>Add</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FAB */}
       {!showQuickAdd && !showFab && (
