@@ -33,6 +33,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--color-primary-light', theme.primaryLight);
     root.style.setProperty('--color-primary-bg', theme.primaryBg);
     root.style.setProperty('--color-primary-text', theme.primaryText);
+    root.style.setProperty('--surface-bg', theme.surfaceBg);
+    root.style.setProperty('--surface-card', theme.surfaceCard);
+    root.style.setProperty('--surface-input', theme.surfaceInput);
+
+    document.body.style.backgroundColor = theme.surfaceBg;
 
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme.primaryDark);

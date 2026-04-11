@@ -1,81 +1,109 @@
 export interface Theme {
   name: string;
   id: string;
-  primary: string;      // main color (bg buttons, nav active)
-  primaryDark: string;  // darker shade (gradient start, header)
-  primaryLight: string; // lighter shade (hover, accents)
-  primaryBg: string;    // very light bg (cards, highlights)
-  primaryText: string;  // text on primary bg
-  gradient: string;     // tailwind gradient classes
-  ring: string;         // focus ring color
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
+  primaryBg: string;
+  primaryText: string;
+  gradient: string;
+  surfaceBg: string;      // tinted page background
+  surfaceCard: string;    // tinted card background
+  surfaceInput: string;   // tinted input background
+  navBg: string;          // bottom nav tint
+  headerGradient: [string, string]; // hero card gradient
 }
 
 export const themes: Theme[] = [
   {
+    name: 'Mint Green',
+    id: 'mint',
+    primary: '#00D09C',
+    primaryDark: '#00916D',
+    primaryLight: '#5EFFC1',
+    primaryBg: '#E0FFF5',
+    primaryText: '#00695C',
+    gradient: 'from-emerald-600 to-teal-400',
+    surfaceBg: '#F0FDF9',
+    surfaceCard: '#E0FFF5',
+    surfaceInput: '#F0FDF9',
+    navBg: '#F0FDF9',
+    headerGradient: ['#00916D', '#00D09C'],
+  },
+  {
     name: 'Ocean Blue',
     id: 'blue',
-    primary: '#3b82f6',
-    primaryDark: '#1e40af',
-    primaryLight: '#60a5fa',
-    primaryBg: '#dbeafe',
-    primaryText: '#1e40af',
-    gradient: 'from-blue-800 to-blue-600',
-    ring: 'ring-blue-500',
+    primary: '#3B82F6',
+    primaryDark: '#1E40AF',
+    primaryLight: '#60A5FA',
+    primaryBg: '#DBEAFE',
+    primaryText: '#1E40AF',
+    gradient: 'from-blue-800 to-blue-500',
+    surfaceBg: '#F0F6FF',
+    surfaceCard: '#E8F1FF',
+    surfaceInput: '#F0F6FF',
+    navBg: '#F0F6FF',
+    headerGradient: ['#1E40AF', '#3B82F6'],
   },
   {
     name: 'Rose Pink',
     id: 'pink',
-    primary: '#ec4899',
-    primaryDark: '#be185d',
-    primaryLight: '#f472b6',
-    primaryBg: '#fce7f3',
-    primaryText: '#be185d',
-    gradient: 'from-pink-700 to-pink-500',
-    ring: 'ring-pink-500',
-  },
-  {
-    name: 'Emerald Green',
-    id: 'green',
-    primary: '#10b981',
-    primaryDark: '#065f46',
-    primaryLight: '#34d399',
-    primaryBg: '#d1fae5',
-    primaryText: '#065f46',
-    gradient: 'from-emerald-800 to-emerald-600',
-    ring: 'ring-emerald-500',
+    primary: '#EC4899',
+    primaryDark: '#BE185D',
+    primaryLight: '#F472B6',
+    primaryBg: '#FCE7F3',
+    primaryText: '#BE185D',
+    gradient: 'from-pink-700 to-pink-400',
+    surfaceBg: '#FFF5F9',
+    surfaceCard: '#FFE8F1',
+    surfaceInput: '#FFF5F9',
+    navBg: '#FFF5F9',
+    headerGradient: ['#BE185D', '#EC4899'],
   },
   {
     name: 'Royal Purple',
     id: 'purple',
-    primary: '#8b5cf6',
-    primaryDark: '#5b21b6',
-    primaryLight: '#a78bfa',
-    primaryBg: '#ede9fe',
-    primaryText: '#5b21b6',
-    gradient: 'from-violet-800 to-violet-600',
-    ring: 'ring-violet-500',
+    primary: '#8B5CF6',
+    primaryDark: '#5B21B6',
+    primaryLight: '#A78BFA',
+    primaryBg: '#EDE9FE',
+    primaryText: '#5B21B6',
+    gradient: 'from-violet-700 to-violet-400',
+    surfaceBg: '#F5F3FF',
+    surfaceCard: '#EDE9FE',
+    surfaceInput: '#F5F3FF',
+    navBg: '#F5F3FF',
+    headerGradient: ['#5B21B6', '#8B5CF6'],
   },
   {
     name: 'Sunset Orange',
     id: 'orange',
-    primary: '#f97316',
-    primaryDark: '#c2410c',
-    primaryLight: '#fb923c',
-    primaryBg: '#ffedd5',
-    primaryText: '#c2410c',
-    gradient: 'from-orange-700 to-orange-500',
-    ring: 'ring-orange-500',
+    primary: '#F97316',
+    primaryDark: '#C2410C',
+    primaryLight: '#FB923C',
+    primaryBg: '#FFEDD5',
+    primaryText: '#C2410C',
+    gradient: 'from-orange-700 to-orange-400',
+    surfaceBg: '#FFF7ED',
+    surfaceCard: '#FFEDD5',
+    surfaceInput: '#FFF7ED',
+    navBg: '#FFF7ED',
+    headerGradient: ['#C2410C', '#F97316'],
   },
   {
     name: 'Slate Dark',
     id: 'dark',
-    primary: '#64748b',
-    primaryDark: '#1e293b',
-    primaryLight: '#94a3b8',
-    primaryBg: '#f1f5f9',
-    primaryText: '#1e293b',
-    gradient: 'from-slate-800 to-slate-600',
-    ring: 'ring-slate-500',
+    primary: '#64748B',
+    primaryDark: '#1E293B',
+    primaryLight: '#94A3B8',
+    primaryBg: '#F1F5F9',
+    primaryText: '#1E293B',
+    gradient: 'from-slate-800 to-slate-500',
+    surfaceBg: '#F8FAFC',
+    surfaceCard: '#F1F5F9',
+    surfaceInput: '#F8FAFC',
+    navBg: '#F8FAFC',
+    headerGradient: ['#1E293B', '#475569'],
   },
 ];
 
