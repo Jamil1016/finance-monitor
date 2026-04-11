@@ -120,7 +120,54 @@ export default function Dashboard() {
 
   const catBreakdown = periodTx.filter(t => t.type === 'expense').reduce<Record<string, number>>((a, t) => { a[t.category] = (a[t.category] || 0) + t.amount; return a; }, {});
   const donutSegments = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: c, value: v, color: CATEGORY_COLORS[c] || '#64748b' }));
-  const trendData = yearData.map(d => ({ name: shortMonth(d.month), expenses: d.expenses, income: d.income }));
+  // Chart data based on period filter
+  const trendData = (() => {
+    if (period === 'Daily') {
+      // X-axis: days of the current month (1-31)
+      const daysInM = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      return Array.from({ length: daysInM }, (_, i) => {
+        const day = i + 1;
+        const dateStr = `${currentMonth}-${String(day).padStart(2, '0')}`;
+        const dayTx = monthTx.filter(t => t.date === dateStr);
+        return {
+          name: String(day),
+          expenses: dayTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+          income: dayTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+        };
+      });
+    }
+    if (period === 'Weekly') {
+      // X-axis: weeks of the current month (Week 1-5)
+      return Array.from({ length: weeksInMonth }, (_, i) => {
+        const weekStart = i * 7 + 1;
+        const weekEnd = Math.min((i + 1) * 7, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
+        const weekTx = monthTx.filter(t => {
+          const d = new Date(t.date).getDate();
+          return d >= weekStart && d <= weekEnd;
+        });
+        return {
+          name: `W${i + 1}`,
+          expenses: weekTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+          income: weekTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+        };
+      });
+    }
+    if (period === 'Year') {
+      // X-axis: 5 years (4 previous + current)
+      const currentYear = now.getFullYear();
+      return Array.from({ length: 5 }, (_, i) => {
+        const yr = currentYear - 4 + i;
+        const yrTx = yr === currentYear ? yearTx : [];
+        return {
+          name: String(yr),
+          expenses: yrTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+          income: yrTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+        };
+      });
+    }
+    // Monthly (default): months of the year
+    return yearData.map(d => ({ name: shortMonth(d.month), expenses: d.expenses, income: d.income }));
+  })();
   const recentTx = periodTx.slice(0, 5);
 
   const handleAddTransaction = useCallback(async () => {
@@ -268,7 +315,11 @@ export default function Dashboard() {
       {/* Income & Expenses Chart */}
       <div className="card-white p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-slate-900">Income & Expenses</h3>
+          <h3 className="text-sm font-bold text-slate-900">Income & Expenses
+            <span className="text-[10px] font-normal text-slate-400 ml-1">
+              {period === 'Daily' ? '(by day)' : period === 'Weekly' ? '(by week)' : period === 'Year' ? '(by year)' : '(by month)'}
+            </span>
+          </h3>
           <Link href="/expenses" className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: theme.primary }}>See all <ChevronRight size={10} /></Link>
         </div>
         {trendData.some(d => d.expenses > 0 || d.income > 0) ? (
