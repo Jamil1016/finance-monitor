@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+design_reference/*.mp4
+design_reference_v2/
+design_reference/
+design_reference_v2/
