@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, TrendingUp, TrendingDown, ArrowRight, Palette, LogOut, ArrowUpRight, ArrowDownRight, Wallet, ChevronRight } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, ArrowRight, Palette, LogOut, ArrowUpRight, ArrowDownRight, Wallet, ChevronRight, Settings, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import { Transaction, Account, SavingsGoal, BudgetCategory } from '@/lib/types';
@@ -98,12 +98,12 @@ export default function Dashboard() {
           <h1 className="text-xl font-bold text-slate-900">{getGreeting()}, {displayName}</h1>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={togglePicker} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}>
-            <Palette size={16} style={{ color: theme.primary }} />
-          </button>
-          <button onClick={signOut} className="md:hidden w-9 h-9 rounded-full flex items-center justify-center bg-red-50">
-            <LogOut size={16} className="text-red-400" />
-          </button>
+          <Link href="/analysis" className="md:hidden w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}>
+            <BarChart3 size={16} style={{ color: theme.primary }} />
+          </Link>
+          <Link href="/settings" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}>
+            <Settings size={16} style={{ color: theme.primary }} />
+          </Link>
         </div>
       </div>
 

@@ -345,23 +345,13 @@ export default function IncomePage() {
                     )}
                   </div>
 
-                  {/* Deductions row */}
-                  <div className="grid grid-cols-4 gap-1.5">
-                    <div className="rounded-xl p-1.5 text-center bg-red-50">
-                      <p className="text-[8px] text-red-400">Tax</p>
-                      <p className="text-[10px] font-bold text-red-600">{formatCurrency(inc.tax)}</p>
+                  {/* Deductions summary - just tax and total */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="rounded-xl px-3 py-1.5 bg-red-50">
+                      <span className="text-[9px] font-bold text-red-600">Tax {formatCurrency(inc.tax)}</span>
                     </div>
-                    <div className="rounded-xl p-1.5 text-center" style={{ backgroundColor: theme.surfaceBg }}>
-                      <p className="text-[8px]" style={{ color: theme.primary + '80' }}>SSS</p>
-                      <p className="text-[10px] font-bold text-slate-700">{formatCurrency(inc.sss)}</p>
-                    </div>
-                    <div className="rounded-xl p-1.5 text-center" style={{ backgroundColor: theme.surfaceBg }}>
-                      <p className="text-[8px]" style={{ color: theme.primary + '80' }}>PH</p>
-                      <p className="text-[10px] font-bold text-slate-700">{formatCurrency(inc.philhealth)}</p>
-                    </div>
-                    <div className="rounded-xl p-1.5 text-center" style={{ backgroundColor: theme.surfaceBg }}>
-                      <p className="text-[8px]" style={{ color: theme.primary + '80' }}>PI</p>
-                      <p className="text-[10px] font-bold text-slate-700">{formatCurrency(inc.pagibig)}</p>
+                    <div className="rounded-xl px-3 py-1.5" style={{ backgroundColor: theme.surfaceBg }}>
+                      <span className="text-[9px] font-bold" style={{ color: theme.primaryText }}>Deductions {formatCurrency(totalDed)}</span>
                     </div>
                   </div>
                 </div>

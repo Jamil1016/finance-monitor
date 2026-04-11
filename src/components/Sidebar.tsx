@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import { LayoutDashboard, Receipt, PieChart, Target, Wallet, LogOut, Palette } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, Target, Wallet, LogOut, Palette, Settings, BarChart3 } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,10 +42,12 @@ export default function Sidebar() {
         })}
       </nav>
       <div className="p-4 space-y-3">
-        <button onClick={togglePicker} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-medium transition-colors hover:opacity-80" style={{ color: theme.primaryText }}>
-          <Palette size={18} /> Theme
-          <div className="ml-auto w-4 h-4 rounded-full" style={{ backgroundColor: theme.primary }} />
-        </button>
+        <Link href="/analysis" className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-medium transition-colors hover:opacity-80" style={{ color: theme.primaryText }}>
+          <BarChart3 size={18} /> Analysis
+        </Link>
+        <Link href="/settings" className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-medium transition-colors hover:opacity-80" style={{ color: theme.primaryText }}>
+          <Settings size={18} /> Settings
+        </Link>
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: theme.primary }}>

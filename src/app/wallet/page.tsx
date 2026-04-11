@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, AlertCircle, Clock, Check, X, FileText, ArrowRight, CreditCard, Wallet, Banknote } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertCircle, Clock, Check, X, FileText, ArrowRight, CreditCard, Wallet, Banknote, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import { Account, Liability, ACCOUNT_ICONS } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
@@ -16,6 +16,10 @@ export default function WalletPage() {
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showAddLiability, setShowAddLiability] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferFrom, setTransferFrom] = useState('');
+  const [transferTo, setTransferTo] = useState('');
+  const [transferAmount, setTransferAmount] = useState('');
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
 
@@ -114,6 +118,23 @@ export default function WalletPage() {
     setEditingLiability(null);
   };
 
+  const handleTransfer = async () => {
+    if (!transferFrom || !transferTo || !transferAmount || transferFrom === transferTo) return;
+    const amt = parseFloat(transferAmount);
+    if (amt <= 0) return;
+    const from = accounts.find(a => a.id === transferFrom);
+    const to = accounts.find(a => a.id === transferTo);
+    if (!from || !to) return;
+    await db.updateAccountBalance(from.id, from.balance - amt);
+    await db.updateAccountBalance(to.id, to.balance + amt);
+    setAccounts(prev => prev.map(a => {
+      if (a.id === from.id) return { ...a, balance: a.balance - amt };
+      if (a.id === to.id) return { ...a, balance: a.balance + amt };
+      return a;
+    }));
+    setTransferFrom(''); setTransferTo(''); setTransferAmount(''); setShowTransfer(false);
+  };
+
   const typeIcons: Record<string, string> = { bank: '🏦', ewallet: '📱', cash: '💵' };
 
   return (
@@ -140,9 +161,16 @@ export default function WalletPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Accounts</h2>
-          <button onClick={() => setShowAddAccount(true)} className="text-xs font-semibold flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-slate-100" style={{ color: theme.primary }}>
-            <Plus size={14} /> Add
-          </button>
+          <div className="flex gap-2">
+            {accounts.length >= 2 && (
+              <button onClick={() => setShowTransfer(true)} className="text-xs font-semibold flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-slate-100" style={{ color: theme.primary }}>
+                <ArrowLeftRight size={14} /> Transfer
+              </button>
+            )}
+            <button onClick={() => setShowAddAccount(true)} className="text-xs font-semibold flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-slate-100" style={{ color: theme.primary }}>
+              <Plus size={14} /> Add
+            </button>
+          </div>
         </div>
 
         {accounts.length === 0 ? (
@@ -354,6 +382,53 @@ export default function WalletPage() {
               <button onClick={handleSaveLiability} className="flex-1 py-3 text-white rounded-xl text-sm font-semibold bg-red-500">
                 {editingLiability ? 'Update' : 'Add Liability'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {showTransfer && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowTransfer(false)}>
+          <div className="bg-white w-full md:w-[420px] md:rounded-3xl rounded-t-3xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-slate-900">Transfer Between Accounts</h2>
+
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primaryText + '80' }}>From</label>
+              <div className="flex gap-2 mt-1 flex-wrap">
+                {accounts.map(a => (
+                  <button key={a.id} onClick={() => setTransferFrom(a.id)}
+                    className="text-xs py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors"
+                    style={transferFrom === a.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#64748b' }}>
+                    <span>{a.icon}</span> {a.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-center"><ArrowLeftRight size={20} style={{ color: theme.primary }} /></div>
+
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primaryText + '80' }}>To</label>
+              <div className="flex gap-2 mt-1 flex-wrap">
+                {accounts.filter(a => a.id !== transferFrom).map(a => (
+                  <button key={a.id} onClick={() => setTransferTo(a.id)}
+                    className="text-xs py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors"
+                    style={transferTo === a.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#64748b' }}>
+                    <span>{a.icon}</span> {a.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primaryText + '80' }}>Amount (PHP)</label>
+              <input type="number" value={transferAmount} onChange={e => setTransferAmount(e.target.value)} placeholder="0.00" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: theme.primary }} autoFocus />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowTransfer(false)} className="flex-1 btn-pill border text-slate-600" style={{ borderColor: '#e2e8f0' }}>Cancel</button>
+              <button onClick={handleTransfer} className="flex-1 btn-pill text-white" style={{ backgroundColor: theme.primary }}>Transfer</button>
             </div>
           </div>
         </div>
