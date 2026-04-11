@@ -51,3 +51,4 @@ export function checkRateLimit(key: string, maxAttempts: number, windowMs: numbe
   localStorage.setItem(`rl_${key}`, JSON.stringify(attempts));
   return true; // Allowed
 }
+// Sat Apr 11 10:04:30 EDT 2026
