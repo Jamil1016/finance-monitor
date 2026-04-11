@@ -20,10 +20,13 @@ export default function WalletPage() {
   const [transferFrom, setTransferFrom] = useState('');
   const [transferTo, setTransferTo] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
+  const [showPayModal, setShowPayModal] = useState<{ type: 'credit_card' | 'liability'; id: string; name: string; balance: number } | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payFromAccount, setPayFromAccount] = useState('');
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
 
-  const [accForm, setAccForm] = useState({ name: '', balance: '', creditLimit: '', type: 'bank' as string, icon: '🏦', color: '#3b82f6' });
+  const [accForm, setAccForm] = useState({ name: '', balance: '', creditLimit: '', billingDay: '', type: 'bank' as string, icon: '🏦', color: '#3b82f6' });
   const [libForm, setLibForm] = useState({ name: '', creditor: '', totalAmount: '', remainingAmount: '', monthlyPayment: '', deadline: '', notes: '', color: '#ef4444' });
 
   useEffect(() => {
@@ -48,17 +51,17 @@ export default function WalletPage() {
     // Regular: balance = what user entered, creditLimit = 0
     const balance = isCC ? 0 : (parseFloat(accForm.balance) || 0);
     const creditLimit = isCC ? (parseFloat(accForm.creditLimit) || 0) : 0;
+    const billingDay = isCC ? (parseInt(accForm.billingDay) || 0) : 0;
 
     if (editingAccount) {
       await db.updateAccount(editingAccount.id, { name: accForm.name, balance: isCC ? editingAccount.balance : balance, type: accForm.type as any, icon: accForm.icon, color: accForm.color });
-      // Also update credit limit
       if (isCC) {
         const { supabase } = await import('@/lib/supabase');
-        await supabase.from('accounts').update({ credit_limit: creditLimit }).eq('id', editingAccount.id);
+        await supabase.from('accounts').update({ credit_limit: creditLimit, billing_day: billingDay }).eq('id', editingAccount.id);
       }
-      setAccounts(prev => prev.map(a => a.id === editingAccount.id ? { ...a, name: accForm.name, balance: isCC ? a.balance : balance, creditLimit: isCC ? creditLimit : 0, type: accForm.type as any, icon: accForm.icon, color: accForm.color } : a));
+      setAccounts(prev => prev.map(a => a.id === editingAccount.id ? { ...a, name: accForm.name, balance: isCC ? a.balance : balance, creditLimit: isCC ? creditLimit : 0, billingDay: isCC ? billingDay : 0, type: accForm.type as any, icon: accForm.icon, color: accForm.color } : a));
     } else {
-      const acc = await db.addAccount({ name: accForm.name, balance, creditLimit, type: accForm.type as any, icon: accForm.icon, color: accForm.color });
+      const acc = await db.addAccount({ name: accForm.name, balance, creditLimit, billingDay, type: accForm.type as any, icon: accForm.icon, color: accForm.color });
       if (acc) setAccounts(prev => [...prev, acc]);
     }
     resetAccForm();
@@ -66,7 +69,7 @@ export default function WalletPage() {
 
   const startEditAccount = (acc: Account) => {
     setEditingAccount(acc);
-    setAccForm({ name: acc.name, balance: String(acc.balance), creditLimit: String(acc.creditLimit || 0), type: acc.type, icon: acc.icon, color: acc.color });
+    setAccForm({ name: acc.name, balance: String(acc.balance), creditLimit: String(acc.creditLimit || 0), billingDay: String(acc.billingDay || ''), type: acc.type, icon: acc.icon, color: acc.color });
     setShowAddAccount(true);
   };
 
@@ -76,7 +79,7 @@ export default function WalletPage() {
   };
 
   const resetAccForm = () => {
-    setAccForm({ name: '', balance: '', creditLimit: '', type: 'bank', icon: '🏦', color: '#3b82f6' });
+    setAccForm({ name: '', balance: '', creditLimit: '', billingDay: '', type: 'bank', icon: '🏦', color: '#3b82f6' });
     setShowAddAccount(false);
     setEditingAccount(null);
   };
@@ -130,6 +133,41 @@ export default function WalletPage() {
     setLibForm({ name: '', creditor: '', totalAmount: '', remainingAmount: '', monthlyPayment: '', deadline: '', notes: '', color: '#ef4444' });
     setShowAddLiability(false);
     setEditingLiability(null);
+  };
+
+  const handlePay = async () => {
+    if (!showPayModal || !payAmount || parseFloat(payAmount) <= 0) return;
+    const amt = parseFloat(payAmount);
+
+    if (showPayModal.type === 'credit_card') {
+      // Reduce credit card balance
+      const cc = accounts.find(a => a.id === showPayModal.id);
+      if (cc) {
+        const newBal = Math.max(0, cc.balance - amt);
+        await db.updateAccountBalance(cc.id, newBal);
+        setAccounts(prev => prev.map(a => a.id === cc.id ? { ...a, balance: newBal } : a));
+      }
+    } else {
+      // Reduce liability remaining amount
+      const lib = liabilities.find(l => l.id === showPayModal.id);
+      if (lib) {
+        const newRemaining = Math.max(0, lib.remainingAmount - amt);
+        await db.updateLiability(lib.id, { remaining_amount: newRemaining });
+        setLiabilities(prev => prev.map(l => l.id === lib.id ? { ...l, remainingAmount: newRemaining } : l));
+      }
+    }
+
+    // Deduct from paying account
+    if (payFromAccount) {
+      const acc = accounts.find(a => a.id === payFromAccount);
+      if (acc && acc.type !== 'credit_card') {
+        const newBal = acc.balance - amt;
+        await db.updateAccountBalance(acc.id, newBal);
+        setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, balance: newBal } : a));
+      }
+    }
+
+    setShowPayModal(null); setPayAmount(''); setPayFromAccount('');
   };
 
   const handleTransfer = async () => {
@@ -226,13 +264,35 @@ export default function WalletPage() {
                 {creditCards.map(cc => {
                   const available = (cc.creditLimit || 0) - cc.balance;
                   const usedPct = cc.creditLimit > 0 ? (cc.balance / cc.creditLimit) * 100 : 0;
+                  // Calculate days until due
+                  const now = new Date();
+                  const thisMonth = now.getDate();
+                  const dueDay = cc.billingDay || 0;
+                  let daysUntilDue = 0;
+                  if (dueDay > 0) {
+                    if (dueDay >= thisMonth) {
+                      daysUntilDue = dueDay - thisMonth;
+                    } else {
+                      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                      daysUntilDue = daysInMonth - thisMonth + dueDay;
+                    }
+                  }
+                  const dueUrgent = dueDay > 0 && daysUntilDue <= 5;
                   return (
                     <div key={cc.id} className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl bg-red-50">💳</div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-slate-900">{cc.name}</p>
-                          {cc.creditLimit > 0 && <p className="text-[10px] text-slate-400">Limit: {formatCurrency(cc.creditLimit)}</p>}
+                          <div className="flex items-center gap-2">
+                            {cc.creditLimit > 0 && <span className="text-[10px] text-slate-400">Limit: {formatCurrency(cc.creditLimit)}</span>}
+                            {dueDay > 0 && (
+                              <span className={`text-[10px] font-medium flex items-center gap-0.5 ${dueUrgent ? 'text-red-500' : 'text-slate-400'}`}>
+                                {dueUrgent && <AlertCircle size={9} />}
+                                Due: {dueDay}th ({daysUntilDue}d)
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-0.5">
                           <button onClick={() => startEditAccount(cc)} className="p-1.5 hover:bg-blue-50 rounded-lg"><Pencil size={13} className="text-slate-300 hover:text-blue-500" /></button>
@@ -256,6 +316,12 @@ export default function WalletPage() {
                           </div>
                           <p className="text-[9px] text-slate-400 mt-0.5">{usedPct.toFixed(0)}% used</p>
                         </div>
+                      )}
+                      {cc.balance > 0 && (
+                        <button onClick={() => setShowPayModal({ type: 'credit_card', id: cc.id, name: cc.name, balance: cc.balance })}
+                          className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
+                          Pay {formatCurrency(cc.balance)}
+                        </button>
                       )}
                     </div>
                   );
@@ -333,6 +399,12 @@ export default function WalletPage() {
                       </div>
 
                       {lib.notes && <p className="text-[10px] text-slate-400 mt-1 italic">"{lib.notes}"</p>}
+                      {lib.remainingAmount > 0 && (
+                        <button onClick={() => setShowPayModal({ type: 'liability', id: lib.id, name: lib.name, balance: lib.remainingAmount })}
+                          className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
+                          Make Payment
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -372,11 +444,17 @@ export default function WalletPage() {
             <input type="text" value={accForm.name} onChange={e => setAccForm({ ...accForm, name: e.target.value })} placeholder="Account name (e.g. BPI, Maya)" className="w-full border border-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-blue-500" autoFocus />
 
             {accForm.type === 'credit_card' ? (
-              <div>
-                <label className="text-xs text-slate-500">Credit Limit (PHP)</label>
-                <input type="number" value={accForm.creditLimit} onChange={e => setAccForm({ ...accForm, creditLimit: e.target.value })} placeholder="e.g. 50000" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: '#ef4444' }} />
-                <p className="text-[10px] text-slate-400 mt-1">Balance starts at ₱0. It increases when you use the card.</p>
-              </div>
+              <>
+                <div>
+                  <label className="text-xs text-slate-500">Credit Limit (PHP)</label>
+                  <input type="number" value={accForm.creditLimit} onChange={e => setAccForm({ ...accForm, creditLimit: e.target.value })} placeholder="e.g. 50000" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: '#ef4444' }} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500">Payment Due Day (1-31)</label>
+                  <input type="number" min="1" max="31" value={accForm.billingDay} onChange={e => setAccForm({ ...accForm, billingDay: e.target.value })} placeholder="e.g. 25" className="input-tinted w-full mt-1" />
+                  <p className="text-[10px] text-slate-400 mt-1">Day of each month when payment is due. Balance starts at ₱0.</p>
+                </div>
+              </>
             ) : (
               <div>
                 <label className="text-xs text-slate-500">Current Balance (PHP)</label>
@@ -455,6 +533,55 @@ export default function WalletPage() {
               <button onClick={resetLibForm} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-600">Cancel</button>
               <button onClick={handleSaveLiability} className="flex-1 py-3 text-white rounded-xl text-sm font-semibold bg-red-500">
                 {editingLiability ? 'Update' : 'Add Liability'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pay Credit Card / Liability Modal */}
+      {showPayModal && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowPayModal(null)}>
+          <div className="bg-white w-full md:w-[420px] md:rounded-3xl rounded-t-3xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-slate-900">
+              Pay {showPayModal.name}
+            </h2>
+            <p className="text-xs text-slate-500">
+              Outstanding: <span className="font-bold text-red-500">{formatCurrency(showPayModal.balance)}</span>
+            </p>
+
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>Payment Amount (PHP)</label>
+              <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0.00" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: theme.primary }} autoFocus />
+              <div className="flex gap-2 mt-2">
+                <button onClick={() => setPayAmount(String(showPayModal.balance))} className="text-[10px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: theme.primaryBg, color: theme.primaryText }}>
+                  Pay Full ({formatCurrency(showPayModal.balance)})
+                </button>
+                {showPayModal.balance > 1000 && (
+                  <button onClick={() => setPayAmount(String(Math.round(showPayModal.balance / 2)))} className="text-[10px] font-bold px-3 py-1 rounded-full border border-slate-200 text-slate-500">
+                    Pay Half
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>Pay From</label>
+              <div className="flex gap-2 flex-wrap mt-1.5">
+                {regularAccounts.map(acc => (
+                  <button key={acc.id} onClick={() => setPayFromAccount(acc.id)} className="text-xs py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors"
+                    style={payFromAccount === acc.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+                    <span>{acc.icon}</span> {acc.name}
+                    <span className="text-[9px] opacity-60">({formatCurrency(acc.balance)})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowPayModal(null)} className="flex-1 btn-pill border text-slate-600" style={{ borderColor: '#e2e8f0' }}>Cancel</button>
+              <button onClick={handlePay} className="flex-1 btn-pill text-white" style={{ backgroundColor: theme.primary }}>
+                Pay {payAmount ? formatCurrency(parseFloat(payAmount)) : ''}
               </button>
             </div>
           </div>

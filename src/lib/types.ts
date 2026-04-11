@@ -68,6 +68,7 @@ export interface Account {
   name: string;
   balance: number;       // For regular: how much you have. For credit card: how much you OWE (starts at 0)
   creditLimit: number;   // Only for credit cards: max you can spend
+  billingDay: number;    // Only for credit cards: day of month payment is due (e.g. 25)
   type: 'bank' | 'ewallet' | 'cash' | 'credit_card';
   icon: string;
   color: string;

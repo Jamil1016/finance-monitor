@@ -6,7 +6,7 @@ export async function getAccounts(): Promise<Account[]> {
   const { data } = await supabase.from('accounts').select('*').order('created_at');
   return (data || []).map((r) => ({
     id: r.id, name: r.name, balance: Number(r.balance), creditLimit: Number(r.credit_limit || 0),
-    type: r.type, icon: r.icon || '🏦', color: r.color || '#3b82f6',
+    billingDay: Number(r.billing_day || 0), type: r.type, icon: r.icon || '🏦', color: r.color || '#3b82f6',
   }));
 }
 
@@ -15,10 +15,10 @@ export async function addAccount(account: Omit<Account, 'id'>): Promise<Account 
   if (!user) return null;
   const { data } = await supabase.from('accounts').insert({
     user_id: user.id, name: account.name, balance: account.balance,
-    credit_limit: account.creditLimit || 0,
+    credit_limit: account.creditLimit || 0, billing_day: account.billingDay || 0,
     type: account.type, icon: account.icon, color: account.color,
   }).select().single();
-  return data ? { id: data.id, name: data.name, balance: Number(data.balance), creditLimit: Number(data.credit_limit || 0), type: data.type, icon: data.icon || '🏦', color: data.color || '#3b82f6' } : null;
+  return data ? { id: data.id, name: data.name, balance: Number(data.balance), creditLimit: Number(data.credit_limit || 0), billingDay: Number(data.billing_day || 0), type: data.type, icon: data.icon || '🏦', color: data.color || '#3b82f6' } : null;
 }
 
 export async function updateAccount(id: string, updates: Partial<Account>) {
