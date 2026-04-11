@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Transaction, BudgetCategory, SavingsGoal, Account, MonthlyIncome } from './types';
+import { Transaction, BudgetCategory, SavingsGoal, GoalTransaction, Account, MonthlyIncome } from './types';
 
 // ---- ACCOUNTS ----
 export async function getAccounts(): Promise<Account[]> {
@@ -83,18 +83,33 @@ export async function initDefaultBudgets(): Promise<BudgetCategory[]> {
 
 // ---- GOALS ----
 export async function getGoals(): Promise<SavingsGoal[]> {
-  const { data } = await supabase.from('goals').select('*').order('created_at');
+  const { data } = await supabase.from('goals').select('*').order('priority', { ascending: true });
   return (data || []).map((r) => ({
     id: r.id, name: r.name, target: Number(r.target), current: Number(r.current),
     deadline: r.deadline || '2026-12-31', color: r.color || '#3b82f6',
+    category: r.category || 'other', icon: r.icon || '🎯', notes: r.notes || '',
+    priority: r.priority || 0, createdAt: r.created_at,
   }));
 }
 
-export async function addGoal(goal: Omit<SavingsGoal, 'id'>): Promise<SavingsGoal | null> {
+export async function addGoal(goal: Omit<SavingsGoal, 'id' | 'createdAt'>): Promise<SavingsGoal | null> {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
-  const { data } = await supabase.from('goals').insert({ user_id: user.id, name: goal.name, target: goal.target, current: goal.current, deadline: goal.deadline, color: goal.color }).select().single();
-  return data ? { id: data.id, name: data.name, target: Number(data.target), current: Number(data.current), deadline: data.deadline, color: data.color } : null;
+  const { data } = await supabase.from('goals').insert({
+    user_id: user.id, name: goal.name, target: goal.target, current: goal.current,
+    deadline: goal.deadline, color: goal.color, category: goal.category,
+    icon: goal.icon, notes: goal.notes, priority: goal.priority,
+  }).select().single();
+  return data ? {
+    id: data.id, name: data.name, target: Number(data.target), current: Number(data.current),
+    deadline: data.deadline, color: data.color, category: data.category || 'other',
+    icon: data.icon || '🎯', notes: data.notes || '', priority: data.priority || 0,
+    createdAt: data.created_at,
+  } : null;
+}
+
+export async function updateGoal(id: string, updates: Partial<SavingsGoal>) {
+  await supabase.from('goals').update(updates).eq('id', id);
 }
 
 export async function updateGoalFunds(id: string, current: number) {
@@ -103,6 +118,26 @@ export async function updateGoalFunds(id: string, current: number) {
 
 export async function deleteGoal(id: string) {
   await supabase.from('goals').delete().eq('id', id);
+  await supabase.from('goal_transactions').delete().eq('goal_id', id);
+}
+
+// ---- GOAL TRANSACTIONS (deposit/withdraw history) ----
+export async function getGoalTransactions(goalId: string): Promise<GoalTransaction[]> {
+  const { data } = await supabase.from('goal_transactions').select('*').eq('goal_id', goalId).order('date', { ascending: false });
+  return (data || []).map((r) => ({
+    id: r.id, goalId: r.goal_id, amount: Number(r.amount),
+    type: r.type, note: r.note || '', date: r.date,
+  }));
+}
+
+export async function addGoalTransaction(tx: Omit<GoalTransaction, 'id'>): Promise<GoalTransaction | null> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return null;
+  const { data } = await supabase.from('goal_transactions').insert({
+    user_id: user.id, goal_id: tx.goalId, amount: tx.amount,
+    type: tx.type, note: tx.note, date: tx.date,
+  }).select().single();
+  return data ? { id: data.id, goalId: data.goal_id, amount: Number(data.amount), type: data.type, note: data.note || '', date: data.date } : null;
 }
 
 // ---- MONTHLY INCOME ----
