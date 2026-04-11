@@ -74,12 +74,10 @@ export default function SettingsPage() {
       <div className="card-white p-3 space-y-2">
         <MenuItem icon={Palette} label="Theme & Design" desc="Change app colors and style" onClick={togglePicker} />
         <MenuItem icon={Lock} label="Change Password" desc="Update your login password" onClick={() => setShowChangePw(true)} />
-        <MenuItem icon={Shield} label="Privacy" desc="Your data is stored securely" onClick={() => {}} />
       </div>
 
       <div className="card-white p-3 space-y-2">
         <MenuItem icon={LogOut} label="Log Out" desc="Sign out of your account" onClick={signOut} />
-        <MenuItem icon={Trash2} label="Delete Account" desc="Permanently delete all data" onClick={() => setShowDeleteConfirm(true)} danger />
       </div>
 
       <p className="text-center text-[10px] text-slate-400 pt-4">FinTrack v1.0 &middot; Built with Next.js + Supabase</p>
