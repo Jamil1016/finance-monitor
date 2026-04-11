@@ -10,6 +10,7 @@ import { formatCurrency, formatShortDate, getCurrentMonth, getMonthName, EXPENSE
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import DonutChart from '@/components/ui/DonutChart';
 import TimeTabs from '@/components/ui/TimeTabs';
+import { getCurrentTime, getCurrentLocation } from '@/lib/location';
 
 function getDaysLeftInMonth(): number {
   const now = new Date();
@@ -129,7 +130,9 @@ export default function ExpensesPage() {
   const handleAdd = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
     const amt = parseFloat(amount);
-    const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date });
+    const time = getCurrentTime();
+    const location = await getCurrentLocation();
+    const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date, time, location });
     if (tx) setAllTransactions((prev) => [tx, ...prev]);
 
     // Deduct/add from selected account (credit card works in reverse)
@@ -291,7 +294,11 @@ export default function ExpensesPage() {
                     <CategoryIcon category={tx.category} size="md" />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-900 truncate">{tx.description}</p>
-                      <p className="text-xs text-slate-400">{tx.category}</p>
+                      <p className="text-xs text-slate-400">
+                        {tx.category}
+                        {tx.time && <span> · {tx.time}</span>}
+                        {tx.location && <span> · 📍{tx.location}</span>}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

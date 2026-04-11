@@ -82,7 +82,7 @@ export async function getTransactions(month?: string): Promise<Transaction[]> {
   return (data || []).map((r) => ({
     id: r.id, amount: Number(r.amount), category: r.category,
     description: r.description || '', type: r.type, date: r.date,
-    createdAt: r.created_at,
+    time: r.time || '', location: r.location || '', createdAt: r.created_at,
   }));
 }
 
@@ -92,8 +92,9 @@ export async function addTransaction(tx: Omit<Transaction, 'id' | 'createdAt'>):
   const { data } = await supabase.from('transactions').insert({
     user_id: user.id, amount: tx.amount, category: tx.category,
     description: tx.description, type: tx.type, date: tx.date,
+    time: tx.time || '', location: tx.location || '',
   }).select().single();
-  return data ? { id: data.id, amount: Number(data.amount), category: data.category, description: data.description || '', type: data.type, date: data.date, createdAt: data.created_at } : null;
+  return data ? { id: data.id, amount: Number(data.amount), category: data.category, description: data.description || '', type: data.type, date: data.date, time: data.time || '', location: data.location || '', createdAt: data.created_at } : null;
 }
 
 export async function deleteTransaction(id: string) {

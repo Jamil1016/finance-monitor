@@ -1,23 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowLeft, User, Lock, Palette, Trash2, LogOut, ChevronRight, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Lock, Palette, LogOut, ChevronRight, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
 import { supabase } from '@/lib/supabase';
+import { isLocationEnabled, setLocationEnabled } from '@/lib/location';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { theme, togglePicker } = useTheme();
   const [showChangePw, setShowChangePw] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [pwMsg, setPwMsg] = useState('');
-  const [deleting, setDeleting] = useState(false);
+  const [locationOn, setLocationOn] = useState(false);
 
   const displayName = user?.user_metadata?.display_name || 'User';
   const email = user?.email || '';
+
+  useEffect(() => {
+    setLocationOn(isLocationEnabled());
+  }, []);
 
   const handleChangePassword = async () => {
     if (newPassword.length < 6) { setPwMsg('Password must be at least 6 characters'); return; }
@@ -26,27 +30,43 @@ export default function SettingsPage() {
     else { setPwMsg('Password changed successfully!'); setNewPassword(''); setTimeout(() => { setShowChangePw(false); setPwMsg(''); }, 2000); }
   };
 
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    // Delete all user data first
-    const tables = ['transactions', 'budgets', 'goals', 'goal_transactions', 'accounts', 'liabilities', 'monthly_income', 'profiles'];
-    for (const table of tables) {
-      await supabase.from(table).delete().eq('user_id', user?.id);
+  const handleLocationToggle = async () => {
+    if (!locationOn) {
+      // Request permission
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        if (result.state === 'denied') {
+          alert('Location permission is blocked. Please enable it in your browser settings.');
+          return;
+        }
+        // Trigger the permission prompt
+        navigator.geolocation.getCurrentPosition(
+          () => { setLocationEnabled(true); setLocationOn(true); },
+          () => { alert('Location access denied. Please allow it to use this feature.'); }
+        );
+      } catch {
+        // Fallback: just try getting location
+        navigator.geolocation.getCurrentPosition(
+          () => { setLocationEnabled(true); setLocationOn(true); },
+          () => { alert('Could not access location.'); }
+        );
+      }
+    } else {
+      setLocationEnabled(false);
+      setLocationOn(false);
     }
-    await supabase.auth.signOut();
-    setDeleting(false);
   };
 
-  const MenuItem = ({ icon: Icon, label, desc, onClick, danger }: { icon: any; label: string; desc?: string; onClick: () => void; danger?: boolean }) => (
-    <button onClick={onClick} className="w-full flex items-center gap-3 p-3 rounded-2xl hover:opacity-80 transition-colors text-left" style={{ backgroundColor: danger ? '#fef2f2' : theme.surfaceBg }}>
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: danger ? '#fee2e2' : theme.primaryBg }}>
-        <Icon size={18} style={{ color: danger ? '#ef4444' : theme.primary }} />
+  const MenuItem = ({ icon: Icon, label, desc, onClick, right }: { icon: any; label: string; desc?: string; onClick: () => void; right?: React.ReactNode }) => (
+    <button onClick={onClick} className="w-full flex items-center gap-3 p-3 rounded-2xl hover:opacity-80 transition-colors text-left" style={{ backgroundColor: theme.surfaceBg }}>
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}>
+        <Icon size={18} style={{ color: theme.primary }} />
       </div>
       <div className="flex-1">
-        <p className={`text-sm font-semibold ${danger ? 'text-red-600' : 'text-slate-900'}`}>{label}</p>
+        <p className="text-sm font-semibold text-slate-900">{label}</p>
         {desc && <p className="text-[10px] text-slate-400">{desc}</p>}
       </div>
-      <ChevronRight size={16} className="text-slate-300" />
+      {right || <ChevronRight size={16} className="text-slate-300" />}
     </button>
   );
 
@@ -70,17 +90,28 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Menu Items */}
+      {/* Settings */}
       <div className="card-white p-3 space-y-2">
         <MenuItem icon={Palette} label="Theme & Design" desc="Change app colors and style" onClick={togglePicker} />
         <MenuItem icon={Lock} label="Change Password" desc="Update your login password" onClick={() => setShowChangePw(true)} />
+        <MenuItem
+          icon={MapPin}
+          label="Location Tracking"
+          desc={locationOn ? 'Saving location with each transaction' : 'Off — tap to enable'}
+          onClick={handleLocationToggle}
+          right={
+            <div className={`w-11 h-6 rounded-full p-0.5 transition-colors ${locationOn ? '' : 'bg-slate-200'}`} style={locationOn ? { backgroundColor: theme.primary } : {}}>
+              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${locationOn ? 'translate-x-5' : 'translate-x-0'}`} />
+            </div>
+          }
+        />
       </div>
 
       <div className="card-white p-3 space-y-2">
         <MenuItem icon={LogOut} label="Log Out" desc="Sign out of your account" onClick={signOut} />
       </div>
 
-      <p className="text-center text-[10px] text-slate-400 pt-4">FinTrack v1.0 &middot; Built with Next.js + Supabase</p>
+      <p className="text-center text-[10px] text-slate-400 pt-4">FinTrack v1.0 · Built with Next.js + Supabase</p>
 
       {/* Change Password Modal */}
       {showChangePw && (
@@ -92,24 +123,6 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <button onClick={() => setShowChangePw(false)} className="flex-1 btn-pill border text-slate-600" style={{ borderColor: '#e2e8f0' }}>Cancel</button>
               <button onClick={handleChangePassword} className="flex-1 btn-pill text-white" style={{ backgroundColor: theme.primary }}>Change Password</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Account Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-white w-full md:w-[400px] md:rounded-3xl rounded-t-3xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content" onClick={e => e.stopPropagation()}>
-            <div className="text-center">
-              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3"><Trash2 size={24} className="text-red-500" /></div>
-              <h2 className="text-lg font-bold text-slate-900">Delete Account</h2>
-              <p className="text-xs text-slate-500 mt-2">Are you sure? This will permanently delete all your data including transactions, budgets, goals, and income records.</p>
-              <p className="text-xs text-red-500 font-semibold mt-2">This action cannot be undone.</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 btn-pill border text-slate-600" style={{ borderColor: '#e2e8f0' }}>Cancel</button>
-              <button onClick={handleDeleteAccount} disabled={deleting} className="flex-1 btn-pill text-white bg-red-500">{deleting ? 'Deleting...' : 'Yes, Delete'}</button>
             </div>
           </div>
         </div>

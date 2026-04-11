@@ -12,6 +12,7 @@ import { formatCurrency, formatAmount, formatShortDate, getCurrentMonth, getGree
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import DonutChart from '@/components/ui/DonutChart';
 import TimeTabs from '@/components/ui/TimeTabs';
+import { getCurrentTime, getCurrentLocation } from '@/lib/location';
 
 function getToday(): string { return new Date().toISOString().split('T')[0]; }
 function getWeekStart(): string { const n = new Date(); const d = n.getDay(); n.setDate(n.getDate() - (d === 0 ? 6 : d - 1)); return n.toISOString().split('T')[0]; }
@@ -118,7 +119,9 @@ export default function Dashboard() {
   const handleAddTransaction = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) return;
     const amt = parseFloat(amount);
-    const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date: today });
+    const time = getCurrentTime();
+    const location = await getCurrentLocation();
+    const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date: today, time, location });
     if (tx) setMonthTx(prev => [tx, ...prev]);
     if (payFrom && tx) {
       const acc = accounts.find(a => a.id === payFrom);
