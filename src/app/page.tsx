@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, TrendingUp, TrendingDown, ArrowRight, Palette, LogOut, ArrowUpRight, ArrowDownRight, Wallet, ChevronRight, Settings, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell, AreaChart, Area, LineChart, Line } from 'recharts';
 import { Transaction, Account, SavingsGoal, BudgetCategory } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
@@ -31,7 +31,9 @@ export default function Dashboard() {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [budgets, setBudgets] = useState<BudgetCategory[]>([]);
   const [weeklyData, setWeeklyData] = useState<{ day: string; amount: number }[]>([]);
+  const [showFab, setShowFab] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState('');
@@ -78,20 +80,21 @@ export default function Dashboard() {
   const trendData = yearData.map(d => ({ name: shortMonth(d.month), expenses: d.expenses, income: d.income }));
   const recentTx = monthTx.slice(0, 5);
 
-  const handleAddExpense = useCallback(async () => {
+  const handleAddTransaction = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) return;
-    const tx = await db.addTransaction({ amount: parseFloat(amount), category, description: description || category, type: 'expense', date: today });
+    const amt = parseFloat(amount);
+    const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date: today });
     if (tx) setMonthTx(prev => [tx, ...prev]);
     if (payFrom && tx) {
       const acc = accounts.find(a => a.id === payFrom);
       if (acc) {
-        const newBal = acc.balance - parseFloat(amount);
+        const newBal = txType === 'expense' ? acc.balance - amt : acc.balance + amt;
         await db.updateAccountBalance(payFrom, newBal);
         setAccounts(prev => prev.map(a => a.id === payFrom ? { ...a, balance: newBal } : a));
       }
     }
-    setAmount(''); setDescription(''); setPayFrom(''); setShowQuickAdd(false);
-  }, [amount, category, description, today]);
+    setAmount(''); setDescription(''); setPayFrom(''); setShowQuickAdd(false); setTxType('expense');
+  }, [amount, category, description, today, txType, payFrom, accounts]);
 
   const Tip = ({ active, payload, label }: any) => {
     if (!active || !payload) return null;
@@ -219,6 +222,51 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Weekly Spending */}
+        <div className="card-white p-4">
+          <h3 className="text-xs font-bold text-slate-900 mb-3">Last 7 Days</h3>
+          <ResponsiveContainer width="100%" height={140}>
+            <BarChart data={weeklyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
+              <RTooltip content={<Tip />} />
+              <Bar dataKey="amount" radius={[6, 6, 0, 0]} name="Spent">
+                {weeklyData.map((e, i) => <Cell key={i} fill={theme.primary} fillOpacity={i === weeklyData.length - 1 ? 1 : 0.4} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Budget Utilization */}
+        <div className="card-white p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-bold text-slate-900">Budget Usage</h3>
+            <Link href="/budget" className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: theme.primary }}>Details <ChevronRight size={10} /></Link>
+          </div>
+          <div className="space-y-2.5">
+            {budgets.map(b => {
+              const spent = monthTx.filter(t => t.category === b.name && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+              const pct = b.budgeted > 0 ? (spent / b.budgeted) * 100 : 0;
+              return (
+                <div key={b.id}>
+                  <div className="flex justify-between text-[10px] mb-0.5">
+                    <span className="text-slate-600 font-medium">{b.name.split(' ')[0]}</span>
+                    <span className={`font-bold ${pct > 100 ? 'text-red-500' : pct > 70 ? 'text-yellow-500' : 'text-slate-600'}`}>{pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: theme.primaryBg }}>
+                    <div className="h-1.5 rounded-full progress-bar" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 100 ? '#ef4444' : pct > 70 ? '#f59e0b' : theme.primary }} />
+                  </div>
+                </div>
+              );
+            })}
+            {budgets.length === 0 && <p className="text-[10px] text-slate-400 py-3 text-center">Set up budget categories</p>}
+          </div>
+        </div>
+      </div>
+
       {/* Transactions */}
       <div className="card-white p-4">
         <div className="flex items-center justify-between mb-3">
@@ -246,28 +294,60 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Quick Add FAB */}
-      {!showQuickAdd ? (
-        <button onClick={() => setShowQuickAdd(true)} className="fixed bottom-20 md:bottom-6 right-4 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center z-40 btn-pill" style={{ backgroundColor: theme.primary, padding: 0 }}>
+      {/* FAB with Expense/Income options */}
+      {!showQuickAdd && !showFab && (
+        <button onClick={() => setShowFab(true)} className="fixed bottom-20 md:bottom-6 right-4 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center z-40" style={{ backgroundColor: theme.primary }}>
           <Plus size={24} />
         </button>
-      ) : (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowQuickAdd(false)}>
+      )}
+
+      {/* FAB expanded: choose Expense or Income */}
+      {showFab && !showQuickAdd && (
+        <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setShowFab(false)}>
+          <div className="fixed bottom-36 md:bottom-24 right-4 space-y-2 z-50" onClick={e => e.stopPropagation()}>
+            <button onClick={() => { setTxType('income'); setShowQuickAdd(true); setShowFab(false); }}
+              className="flex items-center gap-2 bg-green-500 text-white rounded-full py-3 px-5 shadow-lg text-sm font-bold">
+              <ArrowDownRight size={18} /> Add Income
+            </button>
+            <button onClick={() => { setTxType('expense'); setShowQuickAdd(true); setShowFab(false); }}
+              className="flex items-center gap-2 bg-red-500 text-white rounded-full py-3 px-5 shadow-lg text-sm font-bold">
+              <ArrowUpRight size={18} /> Add Expense
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transaction Modal */}
+      {showQuickAdd && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => { setShowQuickAdd(false); setTxType('expense'); }}>
           <div className="bg-white w-full md:w-[420px] md:rounded-3xl rounded-t-3xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-slate-900">Add Expense</h2>
-            <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full text-3xl font-bold text-slate-900 border-b-2 py-2 outline-none" style={{ borderColor: theme.primary }} autoFocus />
-            <div className="grid grid-cols-4 gap-2.5">
-              {EXPENSE_CATEGORIES.map(cat => (
-                <button key={cat} onClick={() => setCategory(cat)} className="flex flex-col items-center gap-1 p-2 rounded-2xl transition-all" style={category === cat ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px' } : {}}>
-                  <CategoryIcon category={cat} size="sm" />
-                  <span className="text-[9px] font-medium text-slate-600">{cat.split(' ')[0]}</span>
-                </button>
-              ))}
+            <h2 className="text-lg font-bold text-slate-900">
+              {txType === 'expense' ? 'Add Expense' : 'Add Income'}
+            </h2>
+
+            <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
+              className="w-full text-3xl font-bold text-slate-900 border-b-2 py-2 outline-none"
+              style={{ borderColor: txType === 'expense' ? '#ef4444' : '#22c55e' }} autoFocus />
+
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>Category</label>
+              <div className="grid grid-cols-4 gap-2 mt-1.5">
+                {(txType === 'expense' ? EXPENSE_CATEGORIES : ['Salary', 'Freelance', 'Gift', 'Investment', 'Refund', 'Other'] as const).map(cat => (
+                  <button key={cat} onClick={() => setCategory(cat)} className="flex flex-col items-center gap-1 p-2 rounded-2xl transition-all" style={category === cat ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px' } : {}}>
+                    <CategoryIcon category={cat} size="sm" />
+                    <span className="text-[9px] font-medium text-slate-600">{cat.split(' ')[0]}</span>
+                  </button>
+                ))}
+              </div>
             </div>
+
             <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)" className="input-tinted w-full" />
+
             {accounts.length > 0 && (
               <div>
-                <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>Pay from</label>
+                <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>
+                  {txType === 'expense' ? 'Pay from' : 'Receive to'}
+                </label>
                 <div className="flex gap-2 flex-wrap mt-1.5">
                   <button onClick={() => setPayFrom('')} className="text-xs py-1.5 px-3 rounded-full transition-colors"
                     style={!payFrom ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
@@ -282,8 +362,10 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            <button onClick={handleAddExpense} className="w-full text-white rounded-full py-3 font-bold text-sm btn-pill" style={{ backgroundColor: theme.primary }}>
-              Add Expense
+
+            <button onClick={handleAddTransaction} className="w-full text-white rounded-full py-3 font-bold text-sm btn-pill"
+              style={{ backgroundColor: txType === 'expense' ? '#ef4444' : '#22c55e' }}>
+              {txType === 'expense' ? 'Add Expense' : 'Add Income'}
             </button>
           </div>
         </div>
