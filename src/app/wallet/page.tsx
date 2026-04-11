@@ -183,6 +183,7 @@ export default function WalletPage() {
             <p className="text-xs text-slate-400">BPI, Maya, GCash, Cash...</p>
           </button>
         ) : (
+          <>
           <div className="space-y-2">
             {regularAccounts.map(acc => (
               <div key={acc.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center gap-3">
@@ -232,6 +233,7 @@ export default function WalletPage() {
               </div>
             </div>
           )}
+          </>
         )}
       </div>
 
