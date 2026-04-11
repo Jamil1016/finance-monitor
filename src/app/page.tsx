@@ -279,6 +279,45 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Expense Breakdown Pie Chart */}
+      {donutSegments.length > 0 && (
+        <div className="card-white p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-slate-900">Expense Breakdown</h3>
+            <span className="text-[10px] font-medium" style={{ color: theme.primary }}>{period}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <DonutChart
+              segments={donutSegments}
+              size={140}
+              thickness={26}
+              centerValue={`₱${(expenses / 1000).toFixed(1)}K`}
+              centerLabel="total"
+            />
+            <div className="flex-1 space-y-2">
+              {donutSegments.map((s, i) => {
+                const pct = expenses > 0 ? (s.value / expenses * 100) : 0;
+                return (
+                  <div key={s.label}>
+                    <div className="flex items-center justify-between text-[10px] mb-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                        <span className="text-slate-600 truncate">{s.label}</span>
+                      </span>
+                      <span className="font-bold text-slate-800 ml-2">{pct.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: s.color + '20' }}>
+                      <div className="h-1.5 rounded-full progress-bar" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                    </div>
+                    <p className="text-[9px] text-slate-400 text-right">{formatCurrency(s.value)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Goals Targets */}
       {goals.length > 0 && (
         <div className="card-white p-4">
