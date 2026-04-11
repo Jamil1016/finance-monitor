@@ -42,8 +42,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #00D09C 0%, #00916D 50%, #F0FDF9 50%)' }}>
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4"><span className="text-3xl">📊</span></div>
-          <h1 className="text-3xl font-bold text-white"><span className="text-white/80">Fin</span>Track</h1>
+          <img src="/logo.png" alt="FinTrack" className="w-40 mx-auto" />
         </div>
 
         <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white rounded-3xl p-6 space-y-4 shadow-xl">
