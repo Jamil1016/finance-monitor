@@ -124,6 +124,24 @@ src/
 - `NEXT_PUBLIC_SUPABASE_URL` - Hardcoded in supabase.ts (public)
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Hardcoded in supabase.ts (public)
 - `ANTHROPIC_API_KEY` - Server-only, set in Vercel env vars for AI scanner
+- `SCAN_BYPASS_PASSWORD` - Server-only, Vercel env (default: fintrack2026admin)
+
+## OAuth Providers (configured in Supabase Dashboard → Auth → Providers)
+- **GitHub** - Client ID: Ov23lifihb5U0VO4Bo0L | App: github.com/settings/developers
+- **Google** - Client ID: 569781326037-...googleusercontent.com | Console: console.cloud.google.com
+- **Facebook** - App ID: 978888577899375 | Console: developers.facebook.com
+- All use callback URL: `https://xkiukujfcsgvfdnvzgwm.supabase.co/auth/v1/callback`
+
+---
+
+## Database Migrations (run in order)
+1. `supabase_migration.sql` - Initial tables
+2. `supabase_migration_v2.sql` - Goal categories, goal_transactions
+3. `supabase_migration_v3.sql` - Liabilities, account icon/color
+4. `supabase_migration_v4.sql` - Credit card type + credit_limit + billing_day
+5. `supabase_migration_v5.sql` - Time + location on transactions
+6. `supabase_migration_v6.sql` - Scan usage tracking (rate limit)
+7. `supabase_migration_v7.sql` - Payment history
 
 ---
 
@@ -135,11 +153,11 @@ src/
 ---
 
 ## Pending / TODO
-- [ ] Fix Supabase auth on deployed app (signup/login may still have fetch error)
+- [ ] Test OAuth login (GitHub, Google, Facebook) on deployed app
 - [ ] Calendar view for transactions
 - [ ] Category detail pages (tap category → see all transactions)
 - [ ] Enhanced search filters (date range, category, amount range)
-- [ ] BIR Form 1700 filing (waiting for accountant Roy's reply on eBIRForms tax table issue)
+- [ ] BIR Form 1700 filing (waiting for accountant Roy's reply on eBIRForms tax table issue - DEADLINE APR 15!)
 - [ ] Onboarding flow for new users
 - [ ] Export data as PDF/Excel
 - [ ] Dark mode theme
