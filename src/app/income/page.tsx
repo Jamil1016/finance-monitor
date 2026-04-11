@@ -318,40 +318,39 @@ export default function IncomePage() {
                     </div>
                   </div>
 
-                  {/* Compensation pills */}
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    <span className="text-[9px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: theme.primaryBg, color: theme.primaryText }}>
-                      Basic {formatCurrency(inc.basicPay)}
-                    </span>
+                  {/* Breakdown grid */}
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    <div className="rounded-xl p-2 text-center" style={{ backgroundColor: theme.primaryBg }}>
+                      <p className="text-[8px] font-medium" style={{ color: theme.primaryText + '80' }}>Basic</p>
+                      <p className="text-xs font-bold" style={{ color: theme.primaryText }}>{formatCurrency(inc.basicPay)}</p>
+                    </div>
                     {inc.overtime > 0 && (
-                      <span className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
-                        OT {formatCurrency(inc.overtime)}
-                      </span>
+                      <div className="rounded-xl p-2 text-center bg-blue-50">
+                        <p className="text-[8px] font-medium text-blue-400">Overtime</p>
+                        <p className="text-xs font-bold text-blue-700">{formatCurrency(inc.overtime)}</p>
+                      </div>
                     )}
                     {inc.allowances > 0 && (
-                      <span className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">
-                        Allow {formatCurrency(inc.allowances)}
-                      </span>
+                      <div className="rounded-xl p-2 text-center bg-purple-50">
+                        <p className="text-[8px] font-medium text-purple-400">Allowances</p>
+                        <p className="text-xs font-bold text-purple-700">{formatCurrency(inc.allowances)}</p>
+                      </div>
                     )}
                     {inc.holidayPay > 0 && (
-                      <span className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
-                        HP {formatCurrency(inc.holidayPay)}
-                      </span>
+                      <div className="rounded-xl p-2 text-center bg-amber-50">
+                        <p className="text-[8px] font-medium text-amber-400">Holiday</p>
+                        <p className="text-xs font-bold text-amber-700">{formatCurrency(inc.holidayPay)}</p>
+                      </div>
                     )}
                     {inc.nsd > 0 && (
-                      <span className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
-                        NSD {formatCurrency(inc.nsd)}
-                      </span>
+                      <div className="rounded-xl p-2 text-center bg-indigo-50">
+                        <p className="text-[8px] font-medium text-indigo-400">NSD</p>
+                        <p className="text-xs font-bold text-indigo-700">{formatCurrency(inc.nsd)}</p>
+                      </div>
                     )}
-                  </div>
-
-                  {/* Deductions summary - just tax and total */}
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="rounded-xl px-3 py-1.5 bg-red-50">
-                      <span className="text-[9px] font-bold text-red-600">Tax {formatCurrency(inc.tax)}</span>
-                    </div>
-                    <div className="rounded-xl px-3 py-1.5" style={{ backgroundColor: theme.surfaceBg }}>
-                      <span className="text-[9px] font-bold" style={{ color: theme.primaryText }}>Deductions {formatCurrency(totalDed)}</span>
+                    <div className="rounded-xl p-2 text-center bg-red-50">
+                      <p className="text-[8px] font-medium text-red-400">Tax</p>
+                      <p className="text-xs font-bold text-red-600">{formatCurrency(inc.tax)}</p>
                     </div>
                   </div>
                 </div>
