@@ -175,7 +175,7 @@ export default function WalletPage() {
       targetName: showPayModal.name,
       amount: amt,
       paidFrom: payingAcc?.name || 'Unknown',
-      date: now.toISOString().split('T')[0],
+      date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
       time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
     });
 

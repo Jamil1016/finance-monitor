@@ -19,15 +19,15 @@ function getDaysLeftInMonth(): number {
 }
 
 function getStartOfWeek(): string {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(now.setDate(diff));
-  return monday.toISOString().split('T')[0];
+  const n = new Date();
+  const d = n.getDay();
+  n.setDate(n.getDate() - (d === 0 ? 6 : d - 1));
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
 }
 
 function getToday(): string {
-  return new Date().toISOString().split('T')[0];
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
 }
 
 export default function ExpensesPage() {
@@ -41,7 +41,7 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getToday());
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [payFrom, setPayFrom] = useState<string>('');
@@ -94,7 +94,7 @@ export default function ExpensesPage() {
     for (let i = 0; i < 30; i++) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const daySpent = allTransactions.filter((t) => t.date === dateStr && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
       if (daySpent <= dailyLimit && daySpent >= 0) streak++;
       else break;

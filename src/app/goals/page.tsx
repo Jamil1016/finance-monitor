@@ -88,7 +88,7 @@ export default function GoalsPage() {
     const tx = await db.addGoalTransaction({
       goalId: fundMode.id, amount: amt, type: fundMode.type,
       note: fundNote || (fundMode.type === 'deposit' ? 'Added funds' : 'Withdrew funds'),
-      date: new Date().toISOString().split('T')[0],
+      date: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })(),
     });
 
     setGoals((prev) => prev.map((g) => g.id === fundMode.id ? { ...g, current: newCurrent } : g));

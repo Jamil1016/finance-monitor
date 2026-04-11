@@ -13,6 +13,11 @@ export function formatAmount(amount: number): string {
   }).format(amount);
 }
 
+export function getLocalDate(d?: Date): string {
+  const now = d || new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 export function formatDate(date: string): string {
   return new Date(date).toLocaleDateString('en-US', {
     month: 'short',

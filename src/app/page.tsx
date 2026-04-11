@@ -14,8 +14,8 @@ import DonutChart from '@/components/ui/DonutChart';
 import TimeTabs from '@/components/ui/TimeTabs';
 import { getCurrentTime, getCurrentLocation } from '@/lib/location';
 
-function getToday(): string { return new Date().toISOString().split('T')[0]; }
-function getWeekStart(): string { const n = new Date(); const d = n.getDay(); n.setDate(n.getDate() - (d === 0 ? 6 : d - 1)); return n.toISOString().split('T')[0]; }
+function getToday(): string { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
+function getWeekStart(): string { const n = new Date(); const d = n.getDay(); n.setDate(n.getDate() - (d === 0 ? 6 : d - 1)); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
 function getYearMonths(): string[] { const yr = new Date().getFullYear(); return Array.from({ length: 12 }, (_, i) => `${yr}-${String(i + 1).padStart(2, '0')}`); }
 function shortMonth(m: string): string { const [y, mo] = m.split('-').map(Number); return new Date(y, mo - 1).toLocaleDateString('en-US', { month: 'short' }); }
 function getDaysLeftInMonth(): number { const n = new Date(); return new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate() - n.getDate() + 1; }
@@ -69,7 +69,7 @@ export default function Dashboard() {
     db.getTransactions(currentMonth).then(tx => {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const now = new Date();
-      setWeeklyData(Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - (6 - i)); return { day: days[d.getDay()], amount: tx.filter(t => t.date === d.toISOString().split('T')[0] && t.type === 'expense').reduce((s, t) => s + t.amount, 0) }; }));
+      setWeeklyData(Array.from({ length: 7 }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - (6 - i)); const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return { day: days[d.getDay()], amount: tx.filter(t => t.date === ds && t.type === 'expense').reduce((s, t) => s + t.amount, 0) }; }));
     });
   }, [user, currentMonth]);
 

@@ -14,8 +14,8 @@ import DonutChart from '@/components/ui/DonutChart';
 
 function getYearMonths(): string[] { const yr = new Date().getFullYear(); return Array.from({ length: 12 }, (_, i) => `${yr}-${String(i + 1).padStart(2, '0')}`); }
 function shortMonth(m: string): string { const [, mo] = m.split('-').map(Number); return new Date(2026, mo - 1).toLocaleDateString('en-US', { month: 'short' }); }
-function getToday(): string { return new Date().toISOString().split('T')[0]; }
-function getWeekStart(): string { const n = new Date(); n.setDate(n.getDate() - (n.getDay() === 0 ? 6 : n.getDay() - 1)); return n.toISOString().split('T')[0]; }
+function getToday(): string { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
+function getWeekStart(): string { const n = new Date(); n.setDate(n.getDate() - (n.getDay() === 0 ? 6 : n.getDay() - 1)); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
 
 export default function AnalysisPage() {
   const { user } = useAuth();
