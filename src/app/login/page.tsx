@@ -27,7 +27,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="FinTrack" className="w-40 mx-auto" />
+          <img src="/logo.png" alt="FinTrack" className="w-56 mx-auto drop-shadow-lg" />
         </div>
 
         {/* Form Card */}
