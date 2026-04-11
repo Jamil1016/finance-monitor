@@ -20,6 +20,7 @@ export default function IncomePage() {
   const [showBypass, setShowBypass] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ base64: string; mediaType: string } | null>(null);
   const [showManual, setShowManual] = useState(false);
+  const [viewMode, setViewMode] = useState<'payslip' | 'monthly'>('payslip');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     month: '', basicPay: '', allowances: '', overtime: '', deMinimis: '',
@@ -42,6 +43,31 @@ export default function IncomePage() {
   const totalOtherDed = incomes.reduce((s, i) => s + i.otherDeductions, 0);
   const avgNet = incomes.length > 0 ? totalNet / incomes.length : 0;
   const avgGross = incomes.length > 0 ? totalGross / incomes.length : 0;
+
+  // Group by month for combined view
+  const monthlyGrouped = incomes.reduce<Record<string, MonthlyIncome>>((acc, inc) => {
+    if (!acc[inc.month]) {
+      acc[inc.month] = { ...inc };
+    } else {
+      const m = acc[inc.month];
+      m.basicPay += inc.basicPay;
+      m.allowances += inc.allowances;
+      m.overtime += inc.overtime;
+      m.deMinimis += inc.deMinimis;
+      m.holidayPay += inc.holidayPay;
+      m.nsd += inc.nsd;
+      m.grossPay += inc.grossPay;
+      m.sss += inc.sss;
+      m.philhealth += inc.philhealth;
+      m.pagibig += inc.pagibig;
+      m.tax += inc.tax;
+      m.otherDeductions += inc.otherDeductions;
+      m.netPay += inc.netPay;
+    }
+    return acc;
+  }, {});
+  const monthlyList = Object.values(monthlyGrouped).sort((a, b) => b.month.localeCompare(a.month));
+  const displayList = viewMode === 'monthly' ? monthlyList : incomes;
 
   // Tax projection
   const annualGross = avgGross * 12;
@@ -306,12 +332,25 @@ export default function IncomePage() {
         </>
       )}
 
-      {/* Monthly History */}
+      {/* History */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-slate-900">{incomes.length > 0 ? 'Monthly History' : ''}</h2>
-          <span className="text-[10px]" style={{ color: theme.primary }}>{incomes.length} records</span>
-        </div>
+        {incomes.length > 0 && (
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-slate-900">History</h2>
+            <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: theme.primary + '40' }}>
+              <button onClick={() => setViewMode('payslip')}
+                className="text-[10px] font-bold px-3 py-1.5 transition-colors"
+                style={viewMode === 'payslip' ? { backgroundColor: theme.primary, color: 'white' } : { color: theme.primary }}>
+                Payslip
+              </button>
+              <button onClick={() => setViewMode('monthly')}
+                className="text-[10px] font-bold px-3 py-1.5 transition-colors"
+                style={viewMode === 'monthly' ? { backgroundColor: theme.primary, color: 'white' } : { color: theme.primary }}>
+                Monthly
+              </button>
+            </div>
+          </div>
+        )}
 
         {incomes.length === 0 && !scanResult && !showManual ? (
           <div className="card-white p-10 text-center">
@@ -331,13 +370,14 @@ export default function IncomePage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {incomes.map(inc => {
+            {displayList.map((inc, idx) => {
               const [yr, mn] = inc.month.split('-').map(Number);
               const monthName = new Date(yr, mn - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
               const totalDed = inc.sss + inc.philhealth + inc.pagibig + inc.tax + inc.otherDeductions;
+              const payslipCount = viewMode === 'monthly' ? incomes.filter(i => i.month === inc.month).length : 0;
 
               return (
-                <div key={inc.id} className="card-white p-4">
+                <div key={viewMode === 'monthly' ? inc.month : inc.id} className="card-white p-4">
                   {/* Header row */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -346,7 +386,10 @@ export default function IncomePage() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900">{monthName}</p>
-                        <p className="text-[10px]" style={{ color: theme.primary }}>Gross: {formatCurrency(inc.grossPay)}</p>
+                        <p className="text-[10px]" style={{ color: theme.primary }}>
+                          Gross: {formatCurrency(inc.grossPay)}
+                          {viewMode === 'monthly' && payslipCount > 1 && <span> · {payslipCount} payslips combined</span>}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -354,8 +397,12 @@ export default function IncomePage() {
                         <p className="text-base font-bold text-green-600">{formatCurrency(inc.netPay)}</p>
                         <p className="text-[9px] text-red-400">-{formatCurrency(totalDed)}</p>
                       </div>
-                      <button onClick={() => handleEdit(inc)} className="p-1.5 rounded-xl hover:bg-blue-50"><Pencil size={13} className="text-slate-300 hover:text-blue-500" /></button>
-                      <button onClick={() => handleDelete(inc.id)} className="p-1.5 rounded-xl hover:bg-red-50"><Trash2 size={13} className="text-slate-300 hover:text-red-400" /></button>
+                      {viewMode === 'payslip' && (
+                        <>
+                          <button onClick={() => handleEdit(inc)} className="p-1.5 rounded-xl hover:bg-blue-50"><Pencil size={13} className="text-slate-300 hover:text-blue-500" /></button>
+                          <button onClick={() => handleDelete(inc.id)} className="p-1.5 rounded-xl hover:bg-red-50"><Trash2 size={13} className="text-slate-300 hover:text-red-400" /></button>
+                        </>
+                      )}
                     </div>
                   </div>
 
