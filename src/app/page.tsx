@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState('');
+  const [payFrom, setPayFrom] = useState('');
 
   const displayName = user?.user_metadata?.display_name || 'there';
   const currentMonth = getCurrentMonth();
@@ -81,7 +82,15 @@ export default function Dashboard() {
     if (!amount || parseFloat(amount) <= 0) return;
     const tx = await db.addTransaction({ amount: parseFloat(amount), category, description: description || category, type: 'expense', date: today });
     if (tx) setMonthTx(prev => [tx, ...prev]);
-    setAmount(''); setDescription(''); setShowQuickAdd(false);
+    if (payFrom && tx) {
+      const acc = accounts.find(a => a.id === payFrom);
+      if (acc) {
+        const newBal = acc.balance - parseFloat(amount);
+        await db.updateAccountBalance(payFrom, newBal);
+        setAccounts(prev => prev.map(a => a.id === payFrom ? { ...a, balance: newBal } : a));
+      }
+    }
+    setAmount(''); setDescription(''); setPayFrom(''); setShowQuickAdd(false);
   }, [amount, category, description, today]);
 
   const Tip = ({ active, payload, label }: any) => {
@@ -256,6 +265,23 @@ export default function Dashboard() {
               ))}
             </div>
             <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)" className="input-tinted w-full" />
+            {accounts.length > 0 && (
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>Pay from</label>
+                <div className="flex gap-2 flex-wrap mt-1.5">
+                  <button onClick={() => setPayFrom('')} className="text-xs py-1.5 px-3 rounded-full transition-colors"
+                    style={!payFrom ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+                    None
+                  </button>
+                  {accounts.map(a => (
+                    <button key={a.id} onClick={() => setPayFrom(a.id)} className="text-xs py-1.5 px-3 rounded-full flex items-center gap-1 transition-colors"
+                      style={payFrom === a.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+                      <span>{a.icon}</span> {a.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <button onClick={handleAddExpense} className="w-full text-white rounded-full py-3 font-bold text-sm btn-pill" style={{ backgroundColor: theme.primary }}>
               Add Expense
             </button>

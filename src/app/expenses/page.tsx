@@ -338,14 +338,15 @@ export default function ExpensesPage() {
             {/* Pay From Account */}
             {accounts.length > 0 && (
               <div>
-                <label className="text-xs text-slate-500 font-medium mb-1.5 block">{txType === 'expense' ? 'Pay from' : 'Receive to'}</label>
-                <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => setPayFrom('')} className={`text-xs py-2 px-3 rounded-lg border transition-colors ${!payFrom ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-slate-200 text-slate-500'}`}>
+                <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primary + '80' }}>{txType === 'expense' ? 'Pay from' : 'Receive to'}</label>
+                <div className="flex gap-2 flex-wrap mt-1.5">
+                  <button onClick={() => setPayFrom('')} className="text-xs py-2 px-3 rounded-full transition-colors"
+                    style={!payFrom ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
                     None
                   </button>
                   {accounts.map(acc => (
-                    <button key={acc.id} onClick={() => setPayFrom(acc.id)} className={`text-xs py-2 px-3 rounded-lg border transition-colors flex items-center gap-1.5 ${payFrom === acc.id ? 'font-medium' : 'text-slate-500'}`}
-                      style={payFrom === acc.id ? { borderColor: acc.color, backgroundColor: acc.color + '10', color: acc.color } : { borderColor: '#e2e8f0' }}>
+                    <button key={acc.id} onClick={() => setPayFrom(acc.id)} className="text-xs py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors"
+                      style={payFrom === acc.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
                       <span>{acc.icon}</span> {acc.name}
                     </button>
                   ))}
