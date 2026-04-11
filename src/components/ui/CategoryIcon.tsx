@@ -22,7 +22,11 @@ const categoryStyles: Record<string, { bg: string; icon: string; iconName: strin
   'Subscriptions':     { bg: '#ede9fe', icon: '#8b5cf6', iconName: 'Tv' },
   'Miscellaneous':     { bg: '#f1f5f9', icon: '#64748b', iconName: 'ShoppingBag' },
   'Income':            { bg: '#d1fae5', icon: '#059669', iconName: 'Wallet' },
-  'Salary':            { bg: '#fce7f3', icon: '#ec4899', iconName: 'Briefcase' },
+  'Salary':            { bg: '#d1fae5', icon: '#059669', iconName: 'Briefcase' },
+  'Freelance':         { bg: '#dbeafe', icon: '#3b82f6', iconName: 'Coffee' },
+  'Investment':        { bg: '#fef3c7', icon: '#f59e0b', iconName: 'Home' },
+  'Refund':            { bg: '#ede9fe', icon: '#8b5cf6', iconName: 'ShoppingCart' },
+  'Other':             { bg: '#f1f5f9', icon: '#64748b', iconName: 'CircleDot' },
   'Transport':         { bg: '#e0e7ff', icon: '#6366f1', iconName: 'Car' },
   'Gift':              { bg: '#fef3c7', icon: '#f59e0b', iconName: 'Gift' },
 };
@@ -38,6 +42,10 @@ const categoryDescriptions: Record<string, string> = {
   'Miscellaneous': 'Other uncategorized expenses',
   'Income': 'Money received',
   'Salary': 'Employment compensation',
+  'Freelance': 'Side jobs, gig work',
+  'Investment': 'Returns, dividends',
+  'Refund': 'Refunds, cashbacks',
+  'Other': 'Other income sources',
   'Transport': 'Commute, fuel, parking',
   'Gift': 'Gifts given or received',
 };

@@ -313,11 +313,11 @@ export default function Dashboard() {
       {showFab && !showQuickAdd && (
         <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setShowFab(false)}>
           <div className="fixed bottom-36 md:bottom-24 right-4 space-y-2 z-50" onClick={e => e.stopPropagation()}>
-            <button onClick={() => { setTxType('income'); setShowQuickAdd(true); setShowFab(false); }}
+            <button onClick={() => { setTxType('income'); setCategory('Salary'); setShowQuickAdd(true); setShowFab(false); }}
               className="flex items-center gap-2 bg-green-500 text-white rounded-full py-3 px-5 shadow-lg text-sm font-bold">
               <ArrowDownRight size={18} /> Add Income
             </button>
-            <button onClick={() => { setTxType('expense'); setShowQuickAdd(true); setShowFab(false); }}
+            <button onClick={() => { setTxType('expense'); setCategory(EXPENSE_CATEGORIES[0]); setShowQuickAdd(true); setShowFab(false); }}
               className="flex items-center gap-2 bg-red-500 text-white rounded-full py-3 px-5 shadow-lg text-sm font-bold">
               <ArrowUpRight size={18} /> Add Expense
             </button>
