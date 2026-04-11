@@ -374,9 +374,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Bottom spacer so FAB doesn't block last content */}
-      <div className="h-20" />
-
       {/* FAB */}
       {!showQuickAdd && !showFab && (
         <button onClick={() => setShowFab(true)} className="fixed bottom-20 md:bottom-6 right-4 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center z-40" style={{ backgroundColor: theme.primary }}>
@@ -463,19 +460,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Total Balance */}
-      {accounts.length > 0 && (
-        <Link href="/wallet" className="rounded-2xl p-3 flex justify-between items-center card-white">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">💰</span>
-            <span className="text-xs font-semibold" style={{ color: theme.primaryText }}>Total Balance</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-sm font-bold text-green-600">{formatCurrency(totalBalance)}</span>
-            <ChevronRight size={14} style={{ color: theme.primary }} />
-          </div>
-        </Link>
-      )}
+      {/* Bottom spacer for FAB */}
+      <div className="h-8 md:h-0" />
     </div>
   );
 }
