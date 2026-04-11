@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const ADMIN_BYPASS_PASSWORD = process.env.SCAN_BYPASS_PASSWORD || 'fintrack2026admin';
+const MONTHLY_SCAN_LIMIT = 10;
 
 const PROMPT = `Analyze this payslip and extract the following information. Return ONLY a valid JSON object with these exact fields (use 0 if a field is not found or shows a dash):
 
@@ -37,10 +39,49 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { image, mediaType } = await request.json();
+    const { image, mediaType, userId, bypassPassword } = await request.json();
 
     if (!image) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    }
+
+    // Rate limit: check monthly scan count
+    if (userId) {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        'https://xkiukujfcsgvfdnvzgwm.supabase.co',
+        ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+         'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhraXVrdWpmY3NndmZkbnZ6Z3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDUxNjEsImV4cCI6MjA5MTM4MTE2MX0',
+         'evjYh8FxUnFxuNQBmUkdBsufNTIJ3OfOOJgOy115Yx4'].join('.')
+      );
+
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      // Get scan count from a simple tracking table or use transactions count
+      const { count } = await supabase
+        .from('scan_usage')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('month', monthKey);
+
+      const scanCount = count || 0;
+
+      if (scanCount >= MONTHLY_SCAN_LIMIT) {
+        // Check bypass password
+        if (!bypassPassword || bypassPassword !== ADMIN_BYPASS_PASSWORD) {
+          return NextResponse.json({
+            error: `Monthly scan limit reached (${MONTHLY_SCAN_LIMIT}/${MONTHLY_SCAN_LIMIT}). Try again next month.`,
+            limitReached: true,
+            scansUsed: scanCount,
+            scansLimit: MONTHLY_SCAN_LIMIT,
+          }, { status: 429 });
+        }
+        // Bypass accepted — continue
+      }
+
+      // Log this scan
+      await supabase.from('scan_usage').insert({ user_id: userId, month: monthKey });
     }
 
     // Determine if this is a PDF or image

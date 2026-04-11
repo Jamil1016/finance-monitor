@@ -15,6 +15,10 @@ export default function IncomePage() {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanError, setScanError] = useState('');
+  const [limitReached, setLimitReached] = useState(false);
+  const [bypassPw, setBypassPw] = useState('');
+  const [showBypass, setShowBypass] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{ base64: string; mediaType: string } | null>(null);
   const [showManual, setShowManual] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -49,18 +53,24 @@ export default function IncomePage() {
   else if (annualTaxable > 250000) projectedTax = 0.15 * (annualTaxable - 250000);
   const taxBracket = annualTaxable > 800000 ? '800K-2M (25%)' : annualTaxable > 400000 ? '400K-800K (20%)' : annualTaxable > 250000 ? '250K-400K (15%)' : 'Below 250K (0%)';
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setScanError(''); setScanning(true); setScanResult(null);
+  const doScan = async (base64: string, mediaType: string, bypass?: string) => {
+    setScanError(''); setScanning(true); setScanResult(null); setLimitReached(false);
     try {
-      const base64 = await fileToBase64(file);
       const res = await fetch('/api/scan-payslip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64, mediaType: file.type || 'image/jpeg' }),
+        body: JSON.stringify({ image: base64, mediaType, userId: user?.id, bypassPassword: bypass }),
       });
       const data = await res.json();
+
+      if (data.limitReached) {
+        setLimitReached(true);
+        setPendingFile({ base64, mediaType });
+        setScanError(`Scan limit reached (${data.scansUsed}/${data.scansLimit} this month)`);
+        setScanning(false);
+        return;
+      }
+
       if (!res.ok || !data.success) { setScanError(data.error || 'Scan failed'); setScanning(false); return; }
       if (data.data) {
         setScanResult(data.data);
@@ -73,9 +83,25 @@ export default function IncomePage() {
           pagibig: String(data.data.pagibig || 0), tax: String(data.data.tax || 0),
           otherDeductions: String(data.data.otherDeductions || 0), netPay: String(data.data.netPay || 0),
         });
+        setPendingFile(null);
       }
     } catch (err: any) { setScanError(err.message || 'Upload failed'); }
-    finally { setScanning(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+    finally { setScanning(false); }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const base64 = await fileToBase64(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    await doScan(base64, file.type || 'image/jpeg');
+  };
+
+  const handleBypassSubmit = async () => {
+    if (!pendingFile || !bypassPw) return;
+    setShowBypass(false);
+    await doScan(pendingFile.base64, pendingFile.mediaType, bypassPw);
+    setBypassPw('');
   };
 
   const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -174,7 +200,22 @@ export default function IncomePage() {
             </button>
           </div>
         )}
-        {scanError && <div className="mt-3 bg-red-500/20 rounded-2xl px-3 py-2 text-xs">{scanError}</div>}
+        {scanError && (
+          <div className="mt-3 bg-red-500/20 rounded-2xl px-3 py-2 text-xs">
+            {scanError}
+            {limitReached && !showBypass && (
+              <button onClick={() => setShowBypass(true)} className="block mt-1.5 underline text-white/80 text-[10px]">
+                Have an access code?
+              </button>
+            )}
+          </div>
+        )}
+        {showBypass && (
+          <div className="mt-3 flex gap-2">
+            <input type="password" value={bypassPw} onChange={e => setBypassPw(e.target.value)} placeholder="Enter access code" className="flex-1 bg-white/20 rounded-full px-4 py-2 text-xs text-white placeholder-white/40 outline-none" autoFocus />
+            <button onClick={handleBypassSubmit} className="bg-white/30 rounded-full px-4 py-2 text-xs font-bold">Unlock</button>
+          </div>
+        )}
       </div>
 
       {/* YTD Summary Cards */}
