@@ -23,7 +23,7 @@ export default function WalletPage() {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
 
-  const [accForm, setAccForm] = useState({ name: '', balance: '', type: 'bank' as string, icon: '🏦', color: '#3b82f6' });
+  const [accForm, setAccForm] = useState({ name: '', balance: '', creditLimit: '', type: 'bank' as string, icon: '🏦', color: '#3b82f6' });
   const [libForm, setLibForm] = useState({ name: '', creditor: '', totalAmount: '', remainingAmount: '', monthlyPayment: '', deadline: '', notes: '', color: '#ef4444' });
 
   useEffect(() => {
@@ -42,12 +42,23 @@ export default function WalletPage() {
 
   // --- Account handlers ---
   const handleSaveAccount = async () => {
-    if (!accForm.name || !accForm.balance) return;
+    if (!accForm.name) return;
+    const isCC = accForm.type === 'credit_card';
+    // Credit card: balance = 0 (owe nothing), creditLimit = what user entered
+    // Regular: balance = what user entered, creditLimit = 0
+    const balance = isCC ? 0 : (parseFloat(accForm.balance) || 0);
+    const creditLimit = isCC ? (parseFloat(accForm.creditLimit) || 0) : 0;
+
     if (editingAccount) {
-      await db.updateAccount(editingAccount.id, { name: accForm.name, balance: parseFloat(accForm.balance), type: accForm.type as any, icon: accForm.icon, color: accForm.color });
-      setAccounts(prev => prev.map(a => a.id === editingAccount.id ? { ...a, name: accForm.name, balance: parseFloat(accForm.balance), type: accForm.type as any, icon: accForm.icon, color: accForm.color } : a));
+      await db.updateAccount(editingAccount.id, { name: accForm.name, balance: isCC ? editingAccount.balance : balance, type: accForm.type as any, icon: accForm.icon, color: accForm.color });
+      // Also update credit limit
+      if (isCC) {
+        const { supabase } = await import('@/lib/supabase');
+        await supabase.from('accounts').update({ credit_limit: creditLimit }).eq('id', editingAccount.id);
+      }
+      setAccounts(prev => prev.map(a => a.id === editingAccount.id ? { ...a, name: accForm.name, balance: isCC ? a.balance : balance, creditLimit: isCC ? creditLimit : 0, type: accForm.type as any, icon: accForm.icon, color: accForm.color } : a));
     } else {
-      const acc = await db.addAccount({ name: accForm.name, balance: parseFloat(accForm.balance), type: accForm.type as any, icon: accForm.icon, color: accForm.color });
+      const acc = await db.addAccount({ name: accForm.name, balance, creditLimit, type: accForm.type as any, icon: accForm.icon, color: accForm.color });
       if (acc) setAccounts(prev => [...prev, acc]);
     }
     resetAccForm();
@@ -55,7 +66,7 @@ export default function WalletPage() {
 
   const startEditAccount = (acc: Account) => {
     setEditingAccount(acc);
-    setAccForm({ name: acc.name, balance: String(acc.balance), type: acc.type, icon: acc.icon, color: acc.color });
+    setAccForm({ name: acc.name, balance: String(acc.balance), creditLimit: String(acc.creditLimit || 0), type: acc.type, icon: acc.icon, color: acc.color });
     setShowAddAccount(true);
   };
 
@@ -65,7 +76,7 @@ export default function WalletPage() {
   };
 
   const resetAccForm = () => {
-    setAccForm({ name: '', balance: '', type: 'bank', icon: '🏦', color: '#3b82f6' });
+    setAccForm({ name: '', balance: '', creditLimit: '', type: 'bank', icon: '🏦', color: '#3b82f6' });
     setShowAddAccount(false);
     setEditingAccount(null);
   };
@@ -212,20 +223,43 @@ export default function WalletPage() {
             <div className="mt-4">
               <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">💳 Credit Cards</h3>
               <div className="space-y-2">
-                {creditCards.map(cc => (
-                  <div key={cc.id} className="bg-white rounded-xl p-4 shadow-sm border border-red-100 flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl bg-red-50">💳</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">{cc.name}</p>
-                      <p className="text-[10px] text-red-400">Outstanding balance</p>
+                {creditCards.map(cc => {
+                  const available = (cc.creditLimit || 0) - cc.balance;
+                  const usedPct = cc.creditLimit > 0 ? (cc.balance / cc.creditLimit) * 100 : 0;
+                  return (
+                    <div key={cc.id} className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl bg-red-50">💳</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">{cc.name}</p>
+                          {cc.creditLimit > 0 && <p className="text-[10px] text-slate-400">Limit: {formatCurrency(cc.creditLimit)}</p>}
+                        </div>
+                        <div className="flex gap-0.5">
+                          <button onClick={() => startEditAccount(cc)} className="p-1.5 hover:bg-blue-50 rounded-lg"><Pencil size={13} className="text-slate-300 hover:text-blue-500" /></button>
+                          <button onClick={() => handleDeleteAccount(cc.id)} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 size={13} className="text-slate-300 hover:text-red-400" /></button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg p-2 bg-red-50 text-center">
+                          <p className="text-[9px] text-red-400">Balance Owed</p>
+                          <p className="text-sm font-bold text-red-500">{formatCurrency(cc.balance)}</p>
+                        </div>
+                        <div className="rounded-lg p-2 text-center" style={{ backgroundColor: theme.surfaceBg }}>
+                          <p className="text-[9px]" style={{ color: theme.primary }}>Available</p>
+                          <p className="text-sm font-bold" style={{ color: theme.primary }}>{formatCurrency(Math.max(0, available))}</p>
+                        </div>
+                      </div>
+                      {cc.creditLimit > 0 && (
+                        <div className="mt-2">
+                          <div className="w-full h-1.5 rounded-full bg-slate-100">
+                            <div className="h-1.5 rounded-full progress-bar" style={{ width: `${Math.min(usedPct, 100)}%`, backgroundColor: usedPct > 80 ? '#ef4444' : usedPct > 50 ? '#f59e0b' : theme.primary }} />
+                          </div>
+                          <p className="text-[9px] text-slate-400 mt-0.5">{usedPct.toFixed(0)}% used</p>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-base font-bold text-red-500">{formatCurrency(cc.balance)}</p>
-                    <div className="flex gap-0.5">
-                      <button onClick={() => startEditAccount(cc)} className="p-1.5 hover:bg-blue-50 rounded-lg"><Pencil size={13} className="text-slate-300 hover:text-blue-500" /></button>
-                      <button onClick={() => handleDeleteAccount(cc.id)} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 size={13} className="text-slate-300 hover:text-red-400" /></button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div className="rounded-xl p-3 flex justify-between items-center bg-red-50">
                   <span className="text-sm font-semibold text-red-600">Credit Card Debt</span>
                   <span className="text-base font-bold text-red-600">{formatCurrency(totalCreditDebt)}</span>
@@ -337,10 +371,18 @@ export default function WalletPage() {
 
             <input type="text" value={accForm.name} onChange={e => setAccForm({ ...accForm, name: e.target.value })} placeholder="Account name (e.g. BPI, Maya)" className="w-full border border-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-blue-500" autoFocus />
 
-            <div>
-              <label className="text-xs text-slate-500">Balance (PHP)</label>
-              <input type="number" value={accForm.balance} onChange={e => setAccForm({ ...accForm, balance: e.target.value })} placeholder="0.00" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: theme.primary }} />
-            </div>
+            {accForm.type === 'credit_card' ? (
+              <div>
+                <label className="text-xs text-slate-500">Credit Limit (PHP)</label>
+                <input type="number" value={accForm.creditLimit} onChange={e => setAccForm({ ...accForm, creditLimit: e.target.value })} placeholder="e.g. 50000" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: '#ef4444' }} />
+                <p className="text-[10px] text-slate-400 mt-1">Balance starts at ₱0. It increases when you use the card.</p>
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs text-slate-500">Current Balance (PHP)</label>
+                <input type="number" value={accForm.balance} onChange={e => setAccForm({ ...accForm, balance: e.target.value })} placeholder="0.00" className="w-full text-2xl font-bold border-b-2 py-2 outline-none" style={{ borderColor: theme.primary }} />
+              </div>
+            )}
 
             <div>
               <label className="text-xs text-slate-500">Type</label>
