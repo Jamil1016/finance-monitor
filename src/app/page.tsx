@@ -88,7 +88,15 @@ export default function Dashboard() {
     if (payFrom && tx) {
       const acc = accounts.find(a => a.id === payFrom);
       if (acc) {
-        const newBal = txType === 'expense' ? acc.balance - amt : acc.balance + amt;
+        // Credit card: expense ADDS to balance (more debt), payment SUBTRACTS
+        // Regular account: expense SUBTRACTS, income ADDS
+        const isCreditCard = acc.type === 'credit_card';
+        let newBal: number;
+        if (isCreditCard) {
+          newBal = txType === 'expense' ? acc.balance + amt : acc.balance - amt;
+        } else {
+          newBal = txType === 'expense' ? acc.balance - amt : acc.balance + amt;
+        }
         await db.updateAccountBalance(payFrom, newBal);
         setAccounts(prev => prev.map(a => a.id === payFrom ? { ...a, balance: newBal } : a));
       }
@@ -353,13 +361,23 @@ export default function Dashboard() {
                     style={!payFrom ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
                     None
                   </button>
-                  {accounts.map(a => (
-                    <button key={a.id} onClick={() => setPayFrom(a.id)} className="text-xs py-1.5 px-3 rounded-full flex items-center gap-1 transition-colors"
-                      style={payFrom === a.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
-                      <span>{a.icon}</span> {a.name}
-                    </button>
-                  ))}
+                  {accounts.map(a => {
+                    const isCC = a.type === 'credit_card';
+                    const isActive = payFrom === a.id;
+                    return (
+                      <button key={a.id} onClick={() => setPayFrom(a.id)} className="text-xs py-1.5 px-3 rounded-full flex items-center gap-1 transition-colors"
+                        style={isActive
+                          ? { backgroundColor: isCC ? '#fef2f2' : theme.primaryBg, outline: `2px solid ${isCC ? '#ef4444' : theme.primary}`, outlineOffset: '-2px', color: isCC ? '#dc2626' : theme.primaryText }
+                          : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+                        <span>{a.icon}</span> {a.name}
+                        {isCC && <span className="text-[8px] opacity-70">(credit)</span>}
+                      </button>
+                    );
+                  })}
                 </div>
+                {payFrom && accounts.find(a => a.id === payFrom)?.type === 'credit_card' && txType === 'expense' && (
+                  <p className="text-[9px] text-red-500 mt-1">💳 This will be charged to your credit card (adds to balance owed)</p>
+                )}
               </div>
             )}
 

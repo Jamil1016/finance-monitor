@@ -67,7 +67,7 @@ export interface Account {
   id: string;
   name: string;
   balance: number;
-  type: 'bank' | 'ewallet' | 'cash';
+  type: 'bank' | 'ewallet' | 'cash' | 'credit_card';
   icon: string;
   color: string;
 }
@@ -88,6 +88,7 @@ export const ACCOUNT_ICONS: { type: string; label: string; icon: string; color: 
   { type: 'bank', label: 'Bank', icon: '🏦', color: '#3b82f6' },
   { type: 'ewallet', label: 'E-Wallet', icon: '📱', color: '#10b981' },
   { type: 'cash', label: 'Cash', icon: '💵', color: '#f59e0b' },
+  { type: 'credit_card', label: 'Credit Card', icon: '💳', color: '#ef4444' },
 ];
 
 export interface MonthlyIncome {

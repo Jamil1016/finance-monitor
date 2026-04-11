@@ -132,11 +132,17 @@ export default function ExpensesPage() {
     const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date });
     if (tx) setAllTransactions((prev) => [tx, ...prev]);
 
-    // Deduct/add from selected account
+    // Deduct/add from selected account (credit card works in reverse)
     if (payFrom) {
       const acc = accounts.find(a => a.id === payFrom);
       if (acc) {
-        const newBal = txType === 'expense' ? acc.balance - amt : acc.balance + amt;
+        const isCreditCard = acc.type === 'credit_card';
+        let newBal: number;
+        if (isCreditCard) {
+          newBal = txType === 'expense' ? acc.balance + amt : acc.balance - amt;
+        } else {
+          newBal = txType === 'expense' ? acc.balance - amt : acc.balance + amt;
+        }
         await db.updateAccountBalance(payFrom, newBal);
         setAccounts(prev => prev.map(a => a.id === payFrom ? { ...a, balance: newBal } : a));
       }
@@ -344,13 +350,23 @@ export default function ExpensesPage() {
                     style={!payFrom ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
                     None
                   </button>
-                  {accounts.map(acc => (
-                    <button key={acc.id} onClick={() => setPayFrom(acc.id)} className="text-xs py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors"
-                      style={payFrom === acc.id ? { backgroundColor: theme.primaryBg, outline: `2px solid ${theme.primary}`, outlineOffset: '-2px', color: theme.primaryText } : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
-                      <span>{acc.icon}</span> {acc.name}
-                    </button>
-                  ))}
+                  {accounts.map(acc => {
+                    const isCC = acc.type === 'credit_card';
+                    const isActive = payFrom === acc.id;
+                    return (
+                      <button key={acc.id} onClick={() => setPayFrom(acc.id)} className="text-xs py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors"
+                        style={isActive
+                          ? { backgroundColor: isCC ? '#fef2f2' : theme.primaryBg, outline: `2px solid ${isCC ? '#ef4444' : theme.primary}`, outlineOffset: '-2px', color: isCC ? '#dc2626' : theme.primaryText }
+                          : { border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+                        <span>{acc.icon}</span> {acc.name}
+                        {isCC && <span className="text-[8px] opacity-70">(credit)</span>}
+                      </button>
+                    );
+                  })}
                 </div>
+                {payFrom && accounts.find(a => a.id === payFrom)?.type === 'credit_card' && txType === 'expense' && (
+                  <p className="text-[9px] text-red-500 mt-1">💳 Charged to credit card (adds to balance owed)</p>
+                )}
               </div>
             )}
 

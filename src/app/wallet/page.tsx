@@ -32,8 +32,11 @@ export default function WalletPage() {
     db.getLiabilities().then(setLiabilities);
   }, [user]);
 
-  const totalAssets = accounts.reduce((s, a) => s + a.balance, 0);
-  const totalLiabilities = liabilities.reduce((s, l) => s + l.remainingAmount, 0);
+  const regularAccounts = accounts.filter(a => a.type !== 'credit_card');
+  const creditCards = accounts.filter(a => a.type === 'credit_card');
+  const totalAssets = regularAccounts.reduce((s, a) => s + a.balance, 0);
+  const totalCreditDebt = creditCards.reduce((s, a) => s + a.balance, 0);
+  const totalLiabilities = liabilities.reduce((s, l) => s + l.remainingAmount, 0) + totalCreditDebt;
   const netWorth = totalAssets - totalLiabilities;
   const monthlyDebtPayment = liabilities.reduce((s, l) => s + l.monthlyPayment, 0);
 
@@ -173,7 +176,7 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {accounts.length === 0 ? (
+        {regularAccounts.length === 0 && creditCards.length === 0 ? (
           <button onClick={() => setShowAddAccount(true)} className="w-full bg-white rounded-2xl p-8 shadow-sm border border-dashed border-slate-300 text-center hover:bg-slate-50">
             <Wallet size={32} className="mx-auto text-slate-300 mb-2" />
             <p className="text-sm text-slate-500 font-medium">Add your first account</p>
@@ -181,7 +184,7 @@ export default function WalletPage() {
           </button>
         ) : (
           <div className="space-y-2">
-            {accounts.map(acc => (
+            {regularAccounts.map(acc => (
               <div key={acc.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: acc.color + '15' }}>
                   {acc.icon || typeIcons[acc.type] || '🏦'}
@@ -197,11 +200,38 @@ export default function WalletPage() {
                 </div>
               </div>
             ))}
-            <div className="bg-slate-50 rounded-xl p-3 flex justify-between items-center">
+            <div className="rounded-xl p-3 flex justify-between items-center" style={{ backgroundColor: theme.surfaceBg }}>
               <span className="text-sm font-semibold text-slate-600">Total Assets</span>
               <span className="text-base font-bold text-green-600">{formatCurrency(totalAssets)}</span>
             </div>
           </div>
+
+          {/* Credit Cards Section */}
+          {creditCards.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">💳 Credit Cards</h3>
+              <div className="space-y-2">
+                {creditCards.map(cc => (
+                  <div key={cc.id} className="bg-white rounded-xl p-4 shadow-sm border border-red-100 flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl bg-red-50">💳</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">{cc.name}</p>
+                      <p className="text-[10px] text-red-400">Outstanding balance</p>
+                    </div>
+                    <p className="text-base font-bold text-red-500">{formatCurrency(cc.balance)}</p>
+                    <div className="flex gap-0.5">
+                      <button onClick={() => startEditAccount(cc)} className="p-1.5 hover:bg-blue-50 rounded-lg"><Pencil size={13} className="text-slate-300 hover:text-blue-500" /></button>
+                      <button onClick={() => handleDeleteAccount(cc.id)} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 size={13} className="text-slate-300 hover:text-red-400" /></button>
+                    </div>
+                  </div>
+                ))}
+                <div className="rounded-xl p-3 flex justify-between items-center bg-red-50">
+                  <span className="text-sm font-semibold text-red-600">Credit Card Debt</span>
+                  <span className="text-base font-bold text-red-600">{formatCurrency(totalCreditDebt)}</span>
+                </div>
+              </div>
+            </div>
+          )}
         )}
       </div>
 
