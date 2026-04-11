@@ -164,21 +164,29 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Accounts at top */}
+      {/* Accounts grid */}
       {accounts.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {accounts.map(a => (
-            <div key={a.id} className="flex-shrink-0 rounded-2xl px-4 py-3 flex items-center gap-2.5 min-w-[140px]" style={{ backgroundColor: a.type === 'credit_card' ? '#fef2f2' : 'white' }}>
-              <span className="text-lg">{a.icon || '🏦'}</span>
-              <div>
-                <p className="text-[10px] text-slate-400 font-medium">{a.name}</p>
-                <p className={`text-sm font-bold ${a.type === 'credit_card' ? 'text-red-500' : 'text-slate-900'}`}>{formatCurrency(a.balance)}</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {accounts.map(a => {
+            const isCC = a.type === 'credit_card';
+            return (
+              <div key={a.id} className="rounded-2xl p-3 card-white" style={isCC ? { border: '1px solid #fecaca' } : {}}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-base">{a.icon || '🏦'}</span>
+                  <span className="text-[10px] font-medium text-slate-500 truncate">{a.name}</span>
+                </div>
+                <p className={`text-base font-bold ${isCC ? 'text-red-500' : 'text-slate-900'}`}>
+                  {isCC ? '-' : ''}{formatCurrency(a.balance)}
+                </p>
+                {isCC && a.creditLimit > 0 && (
+                  <p className="text-[9px] text-slate-400">Limit: {formatCurrency(a.creditLimit)}</p>
+                )}
               </div>
-            </div>
-          ))}
-          <Link href="/wallet" className="flex-shrink-0 rounded-2xl px-4 py-3 flex items-center gap-2 border border-dashed min-w-[100px]" style={{ borderColor: theme.primary + '40' }}>
-            <Plus size={16} style={{ color: theme.primary }} />
-            <span className="text-xs font-medium" style={{ color: theme.primary }}>Add</span>
+            );
+          })}
+          <Link href="/wallet" className="rounded-2xl p-3 flex flex-col items-center justify-center border border-dashed gap-1" style={{ borderColor: theme.primary + '40' }}>
+            <Plus size={18} style={{ color: theme.primary }} />
+            <span className="text-[10px] font-medium" style={{ color: theme.primary }}>Add Account</span>
           </Link>
         </div>
       )}
