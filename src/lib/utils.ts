@@ -80,6 +80,7 @@ export function getCategoryIcon(category: string): string {
 
 export const EXPENSE_CATEGORIES = [
   'Food & Groceries',
+  'Transportation',
   'Utilities & Phone',
   'Personal Care',
   'Social & Leisure',
@@ -91,12 +92,19 @@ export const EXPENSE_CATEGORIES = [
 
 export const CATEGORY_COLORS: Record<string, string> = {
   'Food & Groceries': '#3b82f6',
+  'Transportation': '#6366f1',
   'Utilities & Phone': '#8b5cf6',
   'Personal Care': '#ec4899',
   'Social & Leisure': '#f59e0b',
   'Health': '#10b981',
   'Shopping': '#f97316',
-  'Subscriptions': '#6366f1',
+  'Subscriptions': '#06b6d4',
   'Miscellaneous': '#64748b',
   'Income': '#22c55e',
+  'Salary': '#059669',
+  'Freelance': '#3b82f6',
+  'Gift': '#f59e0b',
+  'Investment': '#8b5cf6',
+  'Refund': '#6366f1',
+  'Other': '#64748b',
 };

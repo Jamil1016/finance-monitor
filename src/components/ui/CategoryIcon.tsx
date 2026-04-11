@@ -28,6 +28,7 @@ const categoryStyles: Record<string, { bg: string; icon: string; iconName: strin
   'Refund':            { bg: '#ede9fe', icon: '#8b5cf6', iconName: 'ShoppingCart' },
   'Other':             { bg: '#f1f5f9', icon: '#64748b', iconName: 'CircleDot' },
   'Transport':         { bg: '#e0e7ff', icon: '#6366f1', iconName: 'Car' },
+  'Transportation':    { bg: '#e0e7ff', icon: '#6366f1', iconName: 'Car' },
   'Gift':              { bg: '#fef3c7', icon: '#f59e0b', iconName: 'Gift' },
 };
 
@@ -47,6 +48,7 @@ const categoryDescriptions: Record<string, string> = {
   'Refund': 'Refunds, cashbacks',
   'Other': 'Other income sources',
   'Transport': 'Commute, fuel, parking',
+  'Transportation': 'Jeep, bus, Grab, tricycle, gas',
   'Gift': 'Gifts given or received',
 };
 
