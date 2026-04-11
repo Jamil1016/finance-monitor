@@ -474,7 +474,7 @@ export default function IncomePage() {
                     </div>
                     {(inc.sss + inc.philhealth + inc.pagibig + inc.otherDeductions) > 0 && (
                       <div className="rounded-xl p-2 text-center bg-orange-50">
-                        <p className="text-[8px] font-medium text-orange-400">Other Ded.</p>
+                        <p className="text-[8px] font-medium text-orange-400">Contributions</p>
                         <p className="text-xs font-bold text-orange-700">{formatCurrency(inc.sss + inc.philhealth + inc.pagibig + inc.otherDeductions)}</p>
                       </div>
                     )}
