@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import { LayoutDashboard, Receipt, PieChart, Target, Wallet, LogOut, Palette, Settings, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, Target, Wallet, FileText, LogOut, Palette, Settings, BarChart3 } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/budget', label: 'Budget', icon: PieChart },
   { href: '/goals', label: 'Goals', icon: Target },
   { href: '/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/income', label: 'Income', icon: FileText },
 ];
 
 export default function Sidebar() {

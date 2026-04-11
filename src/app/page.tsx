@@ -33,7 +33,6 @@ export default function Dashboard() {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [budgets, setBudgets] = useState<BudgetCategory[]>([]);
   const [weeklyData, setWeeklyData] = useState<{ day: string; amount: number }[]>([]);
-  const [showFab, setShowFab] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -374,32 +373,21 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* FAB with Expense/Income options */}
-      {!showQuickAdd && !showFab && (
-        <button onClick={() => setShowFab(true)} className="fixed bottom-20 md:bottom-6 right-4 w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center z-40" style={{ backgroundColor: theme.primary }}>
-          <Plus size={24} />
+      {/* Add Expense / Income Buttons */}
+      <div className="flex gap-2">
+        <button onClick={() => { setTxType('expense'); setCategory(EXPENSE_CATEGORIES[0]); setShowQuickAdd(true); }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl text-sm font-bold text-white bg-red-500 shadow-sm">
+          <ArrowUpRight size={16} /> Expense
         </button>
-      )}
-
-      {/* FAB expanded: choose Expense or Income */}
-      {showFab && !showQuickAdd && (
-        <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setShowFab(false)}>
-          <div className="fixed bottom-36 md:bottom-24 right-4 space-y-2 z-50" onClick={e => e.stopPropagation()}>
-            <button onClick={() => { setTxType('income'); setCategory('Salary'); setShowQuickAdd(true); setShowFab(false); }}
-              className="flex items-center gap-2 bg-green-500 text-white rounded-full py-3 px-5 shadow-lg text-sm font-bold">
-              <ArrowDownRight size={18} /> Add Income
-            </button>
-            <button onClick={() => { setTxType('expense'); setCategory(EXPENSE_CATEGORIES[0]); setShowQuickAdd(true); setShowFab(false); }}
-              className="flex items-center gap-2 bg-red-500 text-white rounded-full py-3 px-5 shadow-lg text-sm font-bold">
-              <ArrowUpRight size={18} /> Add Expense
-            </button>
-          </div>
-        </div>
-      )}
+        <button onClick={() => { setTxType('income'); setCategory('Salary'); setShowQuickAdd(true); }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl text-sm font-bold text-white bg-green-500 shadow-sm">
+          <ArrowDownRight size={16} /> Income
+        </button>
+      </div>
 
       {/* Add Transaction Modal */}
       {showQuickAdd && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => { setShowQuickAdd(false); setTxType('expense'); }}>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowQuickAdd(false)}>
           <div className="bg-white w-full md:w-[420px] md:rounded-3xl rounded-t-3xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-slate-900">
               {txType === 'expense' ? 'Add Expense' : 'Add Income'}
