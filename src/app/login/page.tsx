@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { validateEmail } from '@/lib/validation';
+import { validateEmail, checkRateLimit } from '@/lib/validation';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
@@ -18,6 +18,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!checkRateLimit('login', 5, 60000)) { setError('Too many attempts. Please wait 1 minute.'); return; }
     if (!validateEmail(email)) { setError('Please enter a valid email'); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
     setError(''); setLoading(true);

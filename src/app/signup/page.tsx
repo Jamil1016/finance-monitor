@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { validateEmail, sanitizeText } from '@/lib/validation';
+import { validateEmail, sanitizeText, checkRateLimit } from '@/lib/validation';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 
 export default function SignupPage() {
@@ -19,6 +19,7 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!checkRateLimit('signup', 3, 60000)) { setError('Too many attempts. Please wait 1 minute.'); return; }
     if (!name.trim()) { setError('Please enter your name'); return; }
     if (!validateEmail(email)) { setError('Please enter a valid email'); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return; }

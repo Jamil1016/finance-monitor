@@ -33,7 +33,28 @@ IMPORTANT: For the "month" field, use the PAY PERIOD month (not the pay date). F
 
 Return ONLY the JSON object, no explanation, no markdown code fences.`;
 
+// Simple in-memory rate limit (resets on cold start, but good enough)
+const ipAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkIpRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = ipAttempts.get(ip);
+  if (!record || now > record.resetAt) {
+    ipAttempts.set(ip, { count: 1, resetAt: now + 60000 }); // 1 minute window
+    return true;
+  }
+  if (record.count >= 5) return false; // Max 5 per minute
+  record.count++;
+  return true;
+}
+
 export async function POST(request: NextRequest) {
+  // Rate limit by IP
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  if (!checkIpRateLimit(ip)) {
+    return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 });
+  }
+
   if (!ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'AI scanner not configured. Add ANTHROPIC_API_KEY in Vercel settings.' }, { status: 500 });
   }

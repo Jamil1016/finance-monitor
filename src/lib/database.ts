@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { sanitizeText, sanitizeAmount } from './validation';
 import { Transaction, BudgetCategory, SavingsGoal, GoalTransaction, Account, Liability, PaymentRecord, MonthlyIncome } from './types';
 
 // ---- ACCOUNTS ----
@@ -14,8 +15,10 @@ export async function addAccount(account: Omit<Account, 'id'>): Promise<Account 
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
   const { data } = await supabase.from('accounts').insert({
-    user_id: user.id, name: account.name, balance: account.balance,
-    credit_limit: account.creditLimit || 0, billing_day: account.billingDay || 0,
+    user_id: user.id, name: sanitizeText(account.name),
+    balance: sanitizeAmount(String(account.balance)),
+    credit_limit: sanitizeAmount(String(account.creditLimit || 0)),
+    billing_day: account.billingDay || 0,
     type: account.type, icon: account.icon, color: account.color,
   }).select().single();
   return data ? { id: data.id, name: data.name, balance: Number(data.balance), creditLimit: Number(data.credit_limit || 0), billingDay: Number(data.billing_day || 0), type: data.type, icon: data.icon || '🏦', color: data.color || '#3b82f6' } : null;
@@ -48,10 +51,11 @@ export async function addLiability(lib: Omit<Liability, 'id'>): Promise<Liabilit
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
   const { data } = await supabase.from('liabilities').insert({
-    user_id: user.id, name: lib.name, creditor: lib.creditor,
-    total_amount: lib.totalAmount, remaining_amount: lib.remainingAmount,
-    monthly_payment: lib.monthlyPayment, deadline: lib.deadline,
-    notes: lib.notes, color: lib.color,
+    user_id: user.id, name: sanitizeText(lib.name), creditor: sanitizeText(lib.creditor),
+    total_amount: sanitizeAmount(String(lib.totalAmount)),
+    remaining_amount: sanitizeAmount(String(lib.remainingAmount)),
+    monthly_payment: sanitizeAmount(String(lib.monthlyPayment)),
+    deadline: lib.deadline, notes: sanitizeText(lib.notes), color: lib.color,
   }).select().single();
   return data ? {
     id: data.id, name: data.name, creditor: data.creditor || '',
@@ -86,8 +90,10 @@ export async function addPaymentRecord(record: Omit<PaymentRecord, 'id'>): Promi
   if (!user) return;
   await supabase.from('payment_history').insert({
     user_id: user.id, target_type: record.targetType, target_id: record.targetId,
-    target_name: record.targetName, amount: record.amount,
-    paid_from: record.paidFrom, date: record.date, time: record.time,
+    target_name: sanitizeText(record.targetName),
+    amount: sanitizeAmount(String(record.amount)),
+    paid_from: sanitizeText(record.paidFrom), date: record.date,
+    time: sanitizeText(record.time),
   });
 }
 
@@ -112,9 +118,10 @@ export async function addTransaction(tx: Omit<Transaction, 'id' | 'createdAt'>):
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
   const { data } = await supabase.from('transactions').insert({
-    user_id: user.id, amount: tx.amount, category: tx.category,
-    description: tx.description, type: tx.type, date: tx.date,
-    time: tx.time || '', location: tx.location || '',
+    user_id: user.id, amount: sanitizeAmount(String(tx.amount)),
+    category: sanitizeText(tx.category), description: sanitizeText(tx.description),
+    type: tx.type, date: tx.date,
+    time: sanitizeText(tx.time || ''), location: sanitizeText(tx.location || ''),
   }).select().single();
   return data ? { id: data.id, amount: Number(data.amount), category: data.category, description: data.description || '', type: data.type, date: data.date, time: data.time || '', location: data.location || '', createdAt: data.created_at } : null;
 }
@@ -170,9 +177,11 @@ export async function addGoal(goal: Omit<SavingsGoal, 'id' | 'createdAt'>): Prom
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
   const { data } = await supabase.from('goals').insert({
-    user_id: user.id, name: goal.name, target: goal.target, current: goal.current,
+    user_id: user.id, name: sanitizeText(goal.name),
+    target: sanitizeAmount(String(goal.target)),
+    current: sanitizeAmount(String(goal.current)),
     deadline: goal.deadline, color: goal.color, category: goal.category,
-    icon: goal.icon, notes: goal.notes, priority: goal.priority,
+    icon: goal.icon, notes: sanitizeText(goal.notes), priority: goal.priority,
   }).select().single();
   return data ? {
     id: data.id, name: data.name, target: Number(data.target), current: Number(data.current),
@@ -208,8 +217,9 @@ export async function addGoalTransaction(tx: Omit<GoalTransaction, 'id'>): Promi
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
   const { data } = await supabase.from('goal_transactions').insert({
-    user_id: user.id, goal_id: tx.goalId, amount: tx.amount,
-    type: tx.type, note: tx.note, date: tx.date,
+    user_id: user.id, goal_id: tx.goalId,
+    amount: sanitizeAmount(String(tx.amount)),
+    type: tx.type, note: sanitizeText(tx.note), date: tx.date,
   }).select().single();
   return data ? { id: data.id, goalId: data.goal_id, amount: Number(data.amount), type: data.type, note: data.note || '', date: data.date } : null;
 }
@@ -229,10 +239,14 @@ export async function addMonthlyIncome(inc: Omit<MonthlyIncome, 'id'>): Promise<
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
   const { data } = await supabase.from('monthly_income').insert({
-    user_id: user.id, month: inc.month, basic_pay: inc.basicPay, allowances: inc.allowances,
-    overtime: inc.overtime, de_minimis: inc.deMinimis, holiday_pay: inc.holidayPay, nsd: inc.nsd,
-    gross_pay: inc.grossPay, sss: inc.sss, philhealth: inc.philhealth, pagibig: inc.pagibig,
-    tax: inc.tax, other_deductions: inc.otherDeductions, net_pay: inc.netPay,
+    user_id: user.id, month: sanitizeText(inc.month),
+    basic_pay: sanitizeAmount(String(inc.basicPay)), allowances: sanitizeAmount(String(inc.allowances)),
+    overtime: sanitizeAmount(String(inc.overtime)), de_minimis: sanitizeAmount(String(inc.deMinimis)),
+    holiday_pay: sanitizeAmount(String(inc.holidayPay)), nsd: sanitizeAmount(String(inc.nsd)),
+    gross_pay: sanitizeAmount(String(inc.grossPay)), sss: sanitizeAmount(String(inc.sss)),
+    philhealth: sanitizeAmount(String(inc.philhealth)), pagibig: sanitizeAmount(String(inc.pagibig)),
+    tax: sanitizeAmount(String(inc.tax)), other_deductions: sanitizeAmount(String(inc.otherDeductions)),
+    net_pay: sanitizeAmount(String(inc.netPay)),
   }).select().single();
   return data ? { id: data.id, month: data.month, basicPay: Number(data.basic_pay), allowances: Number(data.allowances), overtime: Number(data.overtime), deMinimis: Number(data.de_minimis), holidayPay: Number(data.holiday_pay), nsd: Number(data.nsd), grossPay: Number(data.gross_pay), sss: Number(data.sss), philhealth: Number(data.philhealth), pagibig: Number(data.pagibig), tax: Number(data.tax), otherDeductions: Number(data.other_deductions), netPay: Number(data.net_pay) } : null;
 }
