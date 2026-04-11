@@ -66,14 +66,43 @@ export default function Dashboard() {
   const periodTx = monthTx.filter(t => { if (period === 'Daily') return t.date === today; if (period === 'Weekly') return t.date >= weekStart; return true; });
   const expenses = isYear ? yearData.reduce((s, d) => s + d.expenses, 0) : periodTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const income = isYear ? yearData.reduce((s, d) => s + d.income, 0) : periodTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const regularAccounts = accounts.filter(a => a.type !== 'credit_card');
+  const totalBalance = regularAccounts.reduce((s, a) => s + a.balance, 0);
   const totalGoalSaved = goals.reduce((s, g) => s + g.current, 0);
   const totalGoalTarget = goals.reduce((s, g) => s + g.target, 0);
   const monthBudget = budgets.length > 0 ? budgets.reduce((s, b) => s + b.budgeted, 0) : 20000;
   const monthSpent = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const budgetPct = monthBudget > 0 ? Math.round((monthSpent / monthBudget) * 100) : 0;
   const prevExpenses = prevMonthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const expenseChange = prevExpenses > 0 ? ((expenses - prevExpenses) / prevExpenses * 100) : 0;
+
+  // Smart budget calculation based on selected period
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); // Mon=1, Sun=7
+  const weekNumber = Math.ceil(dayOfMonth / 7);
+  const weeksInMonth = Math.ceil(daysInMonth / 7);
+
+  // Weekly budget = monthly / ~4.3 weeks, but unspent from previous weeks rolls over
+  const weeklyBaseBudget = monthBudget / weeksInMonth;
+  const daysPassedBeforeThisWeek = (weekNumber - 1) * 7;
+  const budgetUsedBeforeThisWeek = monthTx.filter(t => {
+    const d = new Date(t.date).getDate();
+    return d <= daysPassedBeforeThisWeek && t.type === 'expense';
+  }).reduce((s, t) => s + t.amount, 0);
+  const budgetAllocatedBeforeThisWeek = weeklyBaseBudget * (weekNumber - 1);
+  const rolloverFromPrevWeeks = Math.max(0, budgetAllocatedBeforeThisWeek - budgetUsedBeforeThisWeek);
+  const weeklyBudgetWithRollover = weeklyBaseBudget + rolloverFromPrevWeeks;
+
+  const dailyBudget = monthBudget / daysInMonth;
+  const dailyBudgetWithRollover = (monthBudget - monthSpent) / Math.max(1, daysInMonth - dayOfMonth + 1);
+  const yearlyBudget = monthBudget * 12;
+
+  // Period-aware budget
+  const periodBudget = period === 'Daily' ? dailyBudgetWithRollover : period === 'Weekly' ? weeklyBudgetWithRollover : period === 'Year' ? yearlyBudget : monthBudget;
+  const budgetPct = periodBudget > 0 ? Math.round((expenses / periodBudget) * 100) : 0;
+  const periodLabel = period === 'Daily' ? 'Daily' : period === 'Weekly' ? 'Weekly' : period === 'Year' ? 'Yearly' : 'Monthly';
+  const budgetMsg = budgetPct <= 50 ? `${periodLabel} budget on track!` : budgetPct <= 70 ? `${periodLabel} budget looks good.` : budgetPct <= 90 ? `Careful! ${periodLabel} budget almost used.` : `Over ${periodLabel} budget!`;
 
   const catBreakdown = periodTx.filter(t => t.type === 'expense').reduce<Record<string, number>>((a, t) => { a[t.category] = (a[t.category] || 0) + t.amount; return a; }, {});
   const donutSegments = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: c, value: v, color: CATEGORY_COLORS[c] || '#64748b' }));
@@ -127,6 +156,25 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Accounts at top */}
+      {accounts.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {accounts.map(a => (
+            <div key={a.id} className="flex-shrink-0 rounded-2xl px-4 py-3 flex items-center gap-2.5 min-w-[140px]" style={{ backgroundColor: a.type === 'credit_card' ? '#fef2f2' : 'white' }}>
+              <span className="text-lg">{a.icon || '🏦'}</span>
+              <div>
+                <p className="text-[10px] text-slate-400 font-medium">{a.name}</p>
+                <p className={`text-sm font-bold ${a.type === 'credit_card' ? 'text-red-500' : 'text-slate-900'}`}>{formatCurrency(a.balance)}</p>
+              </div>
+            </div>
+          ))}
+          <Link href="/wallet" className="flex-shrink-0 rounded-2xl px-4 py-3 flex items-center gap-2 border border-dashed min-w-[100px]" style={{ borderColor: theme.primary + '40' }}>
+            <Plus size={16} style={{ color: theme.primary }} />
+            <span className="text-xs font-medium" style={{ color: theme.primary }}>Add</span>
+          </Link>
+        </div>
+      )}
+
       {/* Hero Card - FinWise Style */}
       <div className="rounded-3xl p-5 text-white" style={{ background: `linear-gradient(135deg, ${theme.headerGradient[0]}, ${theme.headerGradient[1]})` }}>
         <div className="flex items-center justify-between mb-4">
@@ -144,9 +192,17 @@ export default function Dashboard() {
           <div className="flex-1 bg-white/20 rounded-full h-2">
             <div className="bg-white h-2 rounded-full progress-bar" style={{ width: `${Math.min(budgetPct, 100)}%` }} />
           </div>
-          <span className="text-xs font-medium">{formatCurrency(monthBudget)}</span>
+          <span className="text-xs font-medium">{formatCurrency(periodBudget)}</span>
         </div>
-        <p className="text-white/60 text-[10px] mt-2">📊 {budgetPct}% Of Your Expenses, {budgetPct <= 70 ? 'Looks Good.' : budgetPct <= 90 ? 'Watch Out.' : 'Over Budget!'}</p>
+        <p className="text-white/60 text-[10px] mt-2">
+          📊 {budgetPct}% of {periodLabel} Budget ({formatCurrency(periodBudget)}) &middot; {budgetMsg}
+          {period === 'Weekly' && rolloverFromPrevWeeks > 0 && (
+            <span className="block mt-0.5">🔄 Includes {formatCurrency(rolloverFromPrevWeeks)} rollover from previous weeks</span>
+          )}
+          {period === 'Daily' && dailyBudgetWithRollover > dailyBudget && (
+            <span className="block mt-0.5">🔄 Adjusted from unspent previous days</span>
+          )}
+        </p>
 
         {/* Savings + Food quick stats */}
         <div className="mt-4 rounded-2xl p-3 flex items-center gap-4" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
@@ -389,23 +445,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Accounts */}
+      {/* Total Balance */}
       {accounts.length > 0 && (
-        <div className="card-white p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-slate-900">Accounts</h3>
-            <Link href="/wallet" className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: theme.primary }}>Manage <ChevronRight size={10} /></Link>
+        <Link href="/wallet" className="rounded-2xl p-3 flex justify-between items-center card-white">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">💰</span>
+            <span className="text-xs font-semibold" style={{ color: theme.primaryText }}>Total Balance</span>
           </div>
-          <div className="space-y-2">
-            {accounts.map(a => (
-              <div key={a.id} className="flex items-center gap-3 p-2 rounded-xl" style={{ backgroundColor: theme.surfaceBg }}>
-                <span className="text-lg">{a.icon || '🏦'}</span>
-                <span className="text-xs font-medium text-slate-700 flex-1">{a.name}</span>
-                <span className="text-sm font-bold text-slate-900">{formatCurrency(a.balance)}</span>
-              </div>
-            ))}
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-bold text-green-600">{formatCurrency(totalBalance)}</span>
+            <ChevronRight size={14} style={{ color: theme.primary }} />
           </div>
-        </div>
+        </Link>
       )}
     </div>
   );
