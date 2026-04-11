@@ -119,6 +119,10 @@ export async function addTransaction(tx: Omit<Transaction, 'id' | 'createdAt'>):
   return data ? { id: data.id, amount: Number(data.amount), category: data.category, description: data.description || '', type: data.type, date: data.date, time: data.time || '', location: data.location || '', createdAt: data.created_at } : null;
 }
 
+export async function updateTransaction(id: string, tx: Partial<{ amount: number; category: string; description: string; type: string; date: string }>) {
+  await supabase.from('transactions').update(tx).eq('id', id);
+}
+
 export async function deleteTransaction(id: string) {
   await supabase.from('transactions').delete().eq('id', id);
 }

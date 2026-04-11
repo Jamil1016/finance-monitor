@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Trash2, TrendingDown, TrendingUp, Flame, Search, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Trash2, Pencil, TrendingDown, TrendingUp, Flame, Search, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Transaction, Account } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
@@ -37,6 +37,7 @@ export default function ExpensesPage() {
   const [prevMonthTx, setPrevMonthTx] = useState<Transaction[]>([]);
   const [month, setMonth] = useState(getCurrentMonth());
   const [showModal, setShowModal] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
   const [description, setDescription] = useState('');
@@ -127,9 +128,28 @@ export default function ExpensesPage() {
     setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
 
+  const handleEdit = (tx: Transaction) => {
+    setEditingTx(tx);
+    setAmount(String(tx.amount));
+    setCategory(tx.category);
+    setDescription(tx.description);
+    setDate(tx.date);
+    setTxType(tx.type);
+    setShowModal(true);
+  };
+
   const handleAdd = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
     const amt = parseFloat(amount);
+
+    if (editingTx) {
+      await db.updateTransaction(editingTx.id, { amount: amt, category, description: description || category, type: txType, date });
+      setAllTransactions(prev => prev.map(t => t.id === editingTx.id ? { ...t, amount: amt, category, description: description || category, type: txType, date } : t));
+      setEditingTx(null);
+      setAmount(''); setDescription(''); setShowModal(false); setTxType('expense'); setPayFrom('');
+      return;
+    }
+
     const time = getCurrentTime();
     const location = await getCurrentLocation();
     const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date, time, location });
@@ -301,11 +321,12 @@ export default function ExpensesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <span className={`text-sm font-bold ${tx.type === 'expense' ? 'text-red-500' : 'text-green-500'}`}>
                       {tx.type === 'expense' ? '-' : '+'}{formatCurrency(tx.amount)}
                     </span>
-                    <button onClick={() => handleDelete(tx.id)} className="p-1 hover:bg-red-50 rounded-lg"><Trash2 size={13} className="text-slate-300 hover:text-red-400" /></button>
+                    <button onClick={() => handleEdit(tx)} className="p-1 hover:bg-blue-50 rounded-lg"><Pencil size={12} className="text-slate-300 hover:text-blue-500" /></button>
+                    <button onClick={() => handleDelete(tx.id)} className="p-1 hover:bg-red-50 rounded-lg"><Trash2 size={12} className="text-slate-300 hover:text-red-400" /></button>
                   </div>
                 </div>
               ))}
@@ -316,8 +337,9 @@ export default function ExpensesPage() {
 
       {/* Add Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end md:items-center justify-center modal-backdrop" onClick={() => { setShowModal(false); setEditingTx(null); }}>
           <div className="bg-white w-full md:w-[440px] md:rounded-2xl rounded-t-2xl p-6 pb-8 mb-16 md:mb-0 space-y-4 modal-content max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {editingTx && <h3 className="text-lg font-bold text-slate-900">Edit Transaction</h3>}
             {/* Expense / Income Toggle */}
             <div className="flex bg-slate-100 rounded-xl p-1">
               <button onClick={() => setTxType('expense')} className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${txType === 'expense' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-500'}`}>
@@ -380,7 +402,7 @@ export default function ExpensesPage() {
             <div className="flex gap-3 pt-2">
               <button onClick={() => setShowModal(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-600">Cancel</button>
               <button onClick={handleAdd} className="flex-1 py-3 text-white rounded-xl text-sm font-semibold" style={{ backgroundColor: txType === 'expense' ? '#ef4444' : '#22c55e' }}>
-                {txType === 'expense' ? 'Add Expense' : 'Add Income'}
+                {editingTx ? 'Update' : txType === 'expense' ? 'Add Expense' : 'Add Income'}
               </button>
             </div>
           </div>
