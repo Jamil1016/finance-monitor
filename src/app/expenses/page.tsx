@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Trash2, TrendingDown, TrendingUp, Flame, Search, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { Transaction } from '@/lib/types';
+import { Transaction, Account } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
 import * as db from '@/lib/database';
@@ -41,6 +41,8 @@ export default function ExpensesPage() {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [payFrom, setPayFrom] = useState<string>('');
   const [filter, setFilter] = useState('All');
   const [timeFilter, setTimeFilter] = useState('Month');
   const [search, setSearch] = useState('');
@@ -49,6 +51,7 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (!user) return;
     db.getTransactions(month).then(setAllTransactions);
+    db.getAccounts().then(setAccounts);
     // Load previous month for comparison
     const [y, m] = month.split('-').map(Number);
     const prev = new Date(y, m - 2);
@@ -125,9 +128,21 @@ export default function ExpensesPage() {
 
   const handleAdd = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
-    const tx = await db.addTransaction({ amount: parseFloat(amount), category, description: description || category, type: txType, date });
+    const amt = parseFloat(amount);
+    const tx = await db.addTransaction({ amount: amt, category, description: description || category, type: txType, date });
     if (tx) setAllTransactions((prev) => [tx, ...prev]);
-    setAmount(''); setDescription(''); setShowModal(false); setTxType('expense');
+
+    // Deduct/add from selected account
+    if (payFrom) {
+      const acc = accounts.find(a => a.id === payFrom);
+      if (acc) {
+        const newBal = txType === 'expense' ? acc.balance - amt : acc.balance + amt;
+        await db.updateAccountBalance(payFrom, newBal);
+        setAccounts(prev => prev.map(a => a.id === payFrom ? { ...a, balance: newBal } : a));
+      }
+    }
+
+    setAmount(''); setDescription(''); setPayFrom(''); setShowModal(false); setTxType('expense');
   };
 
   const handleDelete = async (id: string) => {
@@ -319,6 +334,24 @@ export default function ExpensesPage() {
 
             <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" className="w-full border border-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-blue-500" />
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full border border-slate-200 rounded-xl py-2.5 px-3 text-sm outline-none focus:border-blue-500" />
+
+            {/* Pay From Account */}
+            {accounts.length > 0 && (
+              <div>
+                <label className="text-xs text-slate-500 font-medium mb-1.5 block">{txType === 'expense' ? 'Pay from' : 'Receive to'}</label>
+                <div className="flex gap-2 flex-wrap">
+                  <button onClick={() => setPayFrom('')} className={`text-xs py-2 px-3 rounded-lg border transition-colors ${!payFrom ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-slate-200 text-slate-500'}`}>
+                    None
+                  </button>
+                  {accounts.map(acc => (
+                    <button key={acc.id} onClick={() => setPayFrom(acc.id)} className={`text-xs py-2 px-3 rounded-lg border transition-colors flex items-center gap-1.5 ${payFrom === acc.id ? 'font-medium' : 'text-slate-500'}`}
+                      style={payFrom === acc.id ? { borderColor: acc.color, backgroundColor: acc.color + '10', color: acc.color } : { borderColor: '#e2e8f0' }}>
+                      <span>{acc.icon}</span> {acc.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button onClick={() => setShowModal(false)} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-600">Cancel</button>

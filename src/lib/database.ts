@@ -1,17 +1,27 @@
 import { supabase } from './supabase';
-import { Transaction, BudgetCategory, SavingsGoal, GoalTransaction, Account, MonthlyIncome } from './types';
+import { Transaction, BudgetCategory, SavingsGoal, GoalTransaction, Account, Liability, MonthlyIncome } from './types';
 
 // ---- ACCOUNTS ----
 export async function getAccounts(): Promise<Account[]> {
   const { data } = await supabase.from('accounts').select('*').order('created_at');
-  return (data || []).map((r) => ({ id: r.id, name: r.name, balance: Number(r.balance), type: r.type }));
+  return (data || []).map((r) => ({
+    id: r.id, name: r.name, balance: Number(r.balance), type: r.type,
+    icon: r.icon || '🏦', color: r.color || '#3b82f6',
+  }));
 }
 
-export async function upsertAccount(account: Omit<Account, 'id'> & { id?: string }): Promise<Account | null> {
+export async function addAccount(account: Omit<Account, 'id'>): Promise<Account | null> {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return null;
-  const { data } = await supabase.from('accounts').upsert({ ...account, user_id: user.id }).select().single();
-  return data ? { id: data.id, name: data.name, balance: Number(data.balance), type: data.type } : null;
+  const { data } = await supabase.from('accounts').insert({
+    user_id: user.id, name: account.name, balance: account.balance,
+    type: account.type, icon: account.icon, color: account.color,
+  }).select().single();
+  return data ? { id: data.id, name: data.name, balance: Number(data.balance), type: data.type, icon: data.icon || '🏦', color: data.color || '#3b82f6' } : null;
+}
+
+export async function updateAccount(id: string, updates: Partial<Account>) {
+  await supabase.from('accounts').update(updates).eq('id', id);
 }
 
 export async function updateAccountBalance(id: string, balance: number) {
@@ -20,6 +30,42 @@ export async function updateAccountBalance(id: string, balance: number) {
 
 export async function deleteAccount(id: string) {
   await supabase.from('accounts').delete().eq('id', id);
+}
+
+// ---- LIABILITIES ----
+export async function getLiabilities(): Promise<Liability[]> {
+  const { data } = await supabase.from('liabilities').select('*').order('deadline');
+  return (data || []).map((r) => ({
+    id: r.id, name: r.name, creditor: r.creditor || '',
+    totalAmount: Number(r.total_amount), remainingAmount: Number(r.remaining_amount),
+    monthlyPayment: Number(r.monthly_payment), deadline: r.deadline || '',
+    notes: r.notes || '', color: r.color || '#ef4444',
+  }));
+}
+
+export async function addLiability(lib: Omit<Liability, 'id'>): Promise<Liability | null> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return null;
+  const { data } = await supabase.from('liabilities').insert({
+    user_id: user.id, name: lib.name, creditor: lib.creditor,
+    total_amount: lib.totalAmount, remaining_amount: lib.remainingAmount,
+    monthly_payment: lib.monthlyPayment, deadline: lib.deadline,
+    notes: lib.notes, color: lib.color,
+  }).select().single();
+  return data ? {
+    id: data.id, name: data.name, creditor: data.creditor || '',
+    totalAmount: Number(data.total_amount), remainingAmount: Number(data.remaining_amount),
+    monthlyPayment: Number(data.monthly_payment), deadline: data.deadline || '',
+    notes: data.notes || '', color: data.color || '#ef4444',
+  } : null;
+}
+
+export async function updateLiability(id: string, updates: Partial<{ name: string; creditor: string; remaining_amount: number; monthly_payment: number; deadline: string; notes: string; color: string }>) {
+  await supabase.from('liabilities').update(updates).eq('id', id);
+}
+
+export async function deleteLiability(id: string) {
+  await supabase.from('liabilities').delete().eq('id', id);
 }
 
 // ---- TRANSACTIONS ----

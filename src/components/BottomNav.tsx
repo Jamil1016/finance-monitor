@@ -16,7 +16,7 @@ const navItems = [
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/budget', label: 'Budget', icon: PieChart },
   { href: '/goals', label: 'Goals', icon: Target },
-  { href: '/income', label: 'Income', icon: Wallet },
+  { href: '/wallet', label: 'Wallet', icon: Wallet },
 ];
 
 export default function BottomNav() {

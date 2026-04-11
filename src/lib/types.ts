@@ -68,7 +68,27 @@ export interface Account {
   name: string;
   balance: number;
   type: 'bank' | 'ewallet' | 'cash';
+  icon: string;
+  color: string;
 }
+
+export interface Liability {
+  id: string;
+  name: string;
+  creditor: string;
+  totalAmount: number;
+  remainingAmount: number;
+  monthlyPayment: number;
+  deadline: string;
+  notes: string;
+  color: string;
+}
+
+export const ACCOUNT_ICONS: { type: string; label: string; icon: string; color: string }[] = [
+  { type: 'bank', label: 'Bank', icon: '🏦', color: '#3b82f6' },
+  { type: 'ewallet', label: 'E-Wallet', icon: '📱', color: '#10b981' },
+  { type: 'cash', label: 'Cash', icon: '💵', color: '#f59e0b' },
+];
 
 export interface MonthlyIncome {
   id: string;
