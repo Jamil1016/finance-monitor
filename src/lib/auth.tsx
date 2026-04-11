@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithProvider: (provider: 'google' | 'facebook' | 'github') => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signUp: async () => ({ error: null }),
   signIn: async () => ({ error: null }),
+  signInWithProvider: async () => ({ error: null }),
   signOut: async () => {},
 });
 
@@ -79,6 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithProvider = async (provider: 'google' | 'facebook' | 'github') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/` },
+      });
+      return { error: error?.message ?? null };
+    } catch (e) {
+      return { error: 'Failed to connect. Please try again.' };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -90,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithProvider, signOut }}>
       {children}
     </AuthContext.Provider>
   );
