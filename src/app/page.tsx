@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState('Monthly');
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [monthTx, setMonthTx] = useState<Transaction[]>([]);
+  const [yearTx, setYearTx] = useState<Transaction[]>([]);
   const [prevMonthTx, setPrevMonthTx] = useState<Transaction[]>([]);
   const [yearData, setYearData] = useState<{ month: string; expenses: number; income: number }[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
@@ -50,10 +51,12 @@ export default function Dashboard() {
     db.getGoals().then(setGoals);
     db.getBudgets().then(setBudgets);
     const months = getYearMonths();
+    const allYearTx: Transaction[] = [];
     Promise.all(months.map(async m => {
       const tx = await db.getTransactions(m);
+      allYearTx.push(...tx);
       return { month: m, expenses: tx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), income: tx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0) };
-    })).then(setYearData);
+    })).then(data => { setYearData(data); setYearTx(allYearTx); });
     db.getTransactions(currentMonth).then(tx => {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const now = new Date();
@@ -63,9 +66,11 @@ export default function Dashboard() {
 
   const today = getToday(); const weekStart = getWeekStart();
   const isYear = period === 'Year';
-  const periodTx = monthTx.filter(t => { if (period === 'Daily') return t.date === today; if (period === 'Weekly') return t.date >= weekStart; return true; });
-  const expenses = isYear ? yearData.reduce((s, d) => s + d.expenses, 0) : periodTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const income = isYear ? yearData.reduce((s, d) => s + d.income, 0) : periodTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const periodTx = isYear
+    ? yearTx
+    : monthTx.filter(t => { if (period === 'Daily') return t.date === today; if (period === 'Weekly') return t.date >= weekStart; return true; });
+  const expenses = periodTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const income = periodTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const regularAccounts = accounts.filter(a => a.type !== 'credit_card');
   const totalBalance = regularAccounts.reduce((s, a) => s + a.balance, 0);
   const totalGoalSaved = goals.reduce((s, g) => s + g.current, 0);
@@ -107,7 +112,7 @@ export default function Dashboard() {
   const catBreakdown = periodTx.filter(t => t.type === 'expense').reduce<Record<string, number>>((a, t) => { a[t.category] = (a[t.category] || 0) + t.amount; return a; }, {});
   const donutSegments = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: c, value: v, color: CATEGORY_COLORS[c] || '#64748b' }));
   const trendData = yearData.map(d => ({ name: shortMonth(d.month), expenses: d.expenses, income: d.income }));
-  const recentTx = monthTx.slice(0, 5);
+  const recentTx = periodTx.slice(0, 5);
 
   const handleAddTransaction = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) return;
