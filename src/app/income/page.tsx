@@ -472,6 +472,12 @@ export default function IncomePage() {
                       <p className="text-[8px] font-medium text-red-400">Tax</p>
                       <p className="text-xs font-bold text-red-600">{formatCurrency(inc.tax)}</p>
                     </div>
+                    {(inc.sss + inc.philhealth + inc.pagibig + inc.otherDeductions) > 0 && (
+                      <div className="rounded-xl p-2 text-center bg-orange-50">
+                        <p className="text-[8px] font-medium text-orange-400">Other Ded.</p>
+                        <p className="text-xs font-bold text-orange-700">{formatCurrency(inc.sss + inc.philhealth + inc.pagibig + inc.otherDeductions)}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
