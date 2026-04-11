@@ -34,8 +34,11 @@ export default function Dashboard() {
   }, [user]);
 
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
-  const savingsTarget = goals.length > 0 ? goals[0].target : 100000;
-  const savingsProgress = savingsTarget > 0 ? Math.min((totalBalance / savingsTarget) * 100, 100) : 0;
+  const totalGoalSaved = goals.reduce((sum, g) => sum + g.current, 0);
+  const totalGoalTarget = goals.reduce((sum, g) => sum + g.target, 0);
+  const savingsTarget = totalGoalTarget > 0 ? totalGoalTarget : 100000;
+  const savingsCurrent = totalGoalSaved > 0 ? totalGoalSaved : totalBalance;
+  const savingsProgress = savingsTarget > 0 ? Math.min((savingsCurrent / savingsTarget) * 100, 100) : 0;
   const firstGoalDeadline = goals.length > 0 ? goals[0].deadline : '2026-12-31';
   const daysLeft = getDaysRemaining(firstGoalDeadline);
 
@@ -100,7 +103,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-white/70 text-xs font-medium">Savings Goal</p>
-            <p className="text-2xl font-bold mt-0.5">{formatCurrency(totalBalance)}</p>
+            <p className="text-2xl font-bold mt-0.5">{formatCurrency(savingsCurrent)}</p>
           </div>
           <div className="text-right">
             <p className="text-white/70 text-xs">Target</p>
