@@ -450,10 +450,10 @@ export default function IncomePage() {
                         <p className="text-xs font-bold text-blue-700">{formatCurrency(inc.overtime)}</p>
                       </div>
                     )}
-                    {inc.allowances > 0 && (
+                    {(inc.allowances + inc.deMinimis) > 0 && (
                       <div className="rounded-xl p-2 text-center bg-purple-50">
                         <p className="text-[8px] font-medium text-purple-400">Allowances</p>
-                        <p className="text-xs font-bold text-purple-700">{formatCurrency(inc.allowances)}</p>
+                        <p className="text-xs font-bold text-purple-700">{formatCurrency(inc.allowances + inc.deMinimis)}</p>
                       </div>
                     )}
                     {inc.holidayPay > 0 && (
