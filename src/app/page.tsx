@@ -40,7 +40,8 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
   const [payFrom, setPayFrom] = useState('');
 
-  const displayName = user?.user_metadata?.display_name || 'there';
+  const fullName = user?.user_metadata?.display_name || 'there';
+  const displayName = fullName.split(' ')[0];
   const currentMonth = getCurrentMonth();
 
   useEffect(() => {
@@ -148,8 +149,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium" style={{ color: theme.primary }}>Hi, Welcome Back</p>
-          <h1 className="text-xl font-bold text-slate-900">{getGreeting()}, {displayName}</h1>
+          <h1 className="text-xl font-bold text-slate-900">{getGreeting()}, {displayName}!</h1>
         </div>
         <div className="flex items-center gap-1">
           <Link href="/analysis" className="md:hidden w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}>
