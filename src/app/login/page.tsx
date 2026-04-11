@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { validateEmail } from '@/lib/validation';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
@@ -17,6 +18,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) { setError('Please enter a valid email'); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
     setError(''); setLoading(true);
     const { error } = await signIn(email, password);
     if (error) { setError(error); setLoading(false); } else { router.push('/'); }

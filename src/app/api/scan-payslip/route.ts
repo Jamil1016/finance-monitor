@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const ADMIN_BYPASS_PASSWORD = process.env.SCAN_BYPASS_PASSWORD || 'fintrack2026admin';
+const ADMIN_BYPASS_PASSWORD = process.env.SCAN_BYPASS_PASSWORD || '';
 const MONTHLY_SCAN_LIMIT = 10;
 
 const PROMPT = `Analyze this payslip and extract the following information. Return ONLY a valid JSON object with these exact fields (use 0 if a field is not found or shows a dash):
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       const scanCount = count || 0;
 
       if (scanCount >= MONTHLY_SCAN_LIMIT) {
-        // Check bypass password
-        if (!bypassPassword || bypassPassword !== ADMIN_BYPASS_PASSWORD) {
+        // Check bypass password (must be set in env, no default)
+        if (!ADMIN_BYPASS_PASSWORD || !bypassPassword || bypassPassword !== ADMIN_BYPASS_PASSWORD) {
           return NextResponse.json({
             error: `Monthly scan limit reached (${MONTHLY_SCAN_LIMIT}/${MONTHLY_SCAN_LIMIT}). Try again next month.`,
             limitReached: true,
