@@ -76,6 +76,17 @@ export interface Account {
   color: string;
 }
 
+export interface PaymentRecord {
+  id: string;
+  targetType: 'credit_card' | 'liability';
+  targetId: string;
+  targetName: string;
+  amount: number;
+  paidFrom: string; // account name
+  date: string;
+  time: string;
+}
+
 export interface Liability {
   id: string;
   name: string;

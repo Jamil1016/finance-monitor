@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, AlertCircle, Clock, Check, X, FileText, ArrowRight, CreditCard, Wallet, Banknote, ArrowLeftRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertCircle, Clock, Check, X, FileText, ArrowRight, CreditCard, Wallet, Banknote, ArrowLeftRight, ChevronDown, ChevronUp, History } from 'lucide-react';
 import Link from 'next/link';
-import { Account, Liability, ACCOUNT_ICONS } from '@/lib/types';
+import { Account, Liability, PaymentRecord, ACCOUNT_ICONS } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
 import * as db from '@/lib/database';
@@ -23,6 +23,8 @@ export default function WalletPage() {
   const [showPayModal, setShowPayModal] = useState<{ type: 'credit_card' | 'liability'; id: string; name: string; balance: number } | null>(null);
   const [payAmount, setPayAmount] = useState('');
   const [payFromAccount, setPayFromAccount] = useState('');
+  const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([]);
+  const [showHistory, setShowHistory] = useState<string | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
 
@@ -158,16 +160,33 @@ export default function WalletPage() {
     }
 
     // Deduct from paying account
-    if (payFromAccount) {
-      const acc = accounts.find(a => a.id === payFromAccount);
-      if (acc && acc.type !== 'credit_card') {
-        const newBal = acc.balance - amt;
-        await db.updateAccountBalance(acc.id, newBal);
-        setAccounts(prev => prev.map(a => a.id === acc.id ? { ...a, balance: newBal } : a));
-      }
+    const payingAcc = payFromAccount ? accounts.find(a => a.id === payFromAccount) : null;
+    if (payingAcc && payingAcc.type !== 'credit_card') {
+      const newBal = payingAcc.balance - amt;
+      await db.updateAccountBalance(payingAcc.id, newBal);
+      setAccounts(prev => prev.map(a => a.id === payingAcc.id ? { ...a, balance: newBal } : a));
     }
 
+    // Log payment history
+    const now = new Date();
+    await db.addPaymentRecord({
+      targetType: showPayModal.type,
+      targetId: showPayModal.id,
+      targetName: showPayModal.name,
+      amount: amt,
+      paidFrom: payingAcc?.name || 'Unknown',
+      date: now.toISOString().split('T')[0],
+      time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    });
+
     setShowPayModal(null); setPayAmount(''); setPayFromAccount('');
+  };
+
+  const toggleHistory = async (id: string) => {
+    if (showHistory === id) { setShowHistory(null); return; }
+    const records = await db.getPaymentHistory(id);
+    setPaymentHistory(records);
+    setShowHistory(id);
   };
 
   const handleTransfer = async () => {
@@ -317,11 +336,37 @@ export default function WalletPage() {
                           <p className="text-[9px] text-slate-400 mt-0.5">{usedPct.toFixed(0)}% used</p>
                         </div>
                       )}
-                      {cc.balance > 0 && (
-                        <button onClick={() => setShowPayModal({ type: 'credit_card', id: cc.id, name: cc.name, balance: cc.balance })}
-                          className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
-                          Pay {formatCurrency(cc.balance)}
+                      <div className="flex gap-2 mt-2">
+                        {cc.balance > 0 && (
+                          <button onClick={() => setShowPayModal({ type: 'credit_card', id: cc.id, name: cc.name, balance: cc.balance })}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
+                            Pay {formatCurrency(cc.balance)}
+                          </button>
+                        )}
+                        <button onClick={() => toggleHistory(cc.id)}
+                          className="py-2 px-3 rounded-xl text-xs font-medium border flex items-center gap-1" style={{ borderColor: theme.primary + '40', color: theme.primary }}>
+                          <History size={12} /> {showHistory === cc.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                         </button>
+                      </div>
+                      {showHistory === cc.id && (
+                        <div className="mt-2 pt-2 border-t border-slate-100">
+                          <p className="text-[10px] font-semibold text-slate-500 mb-1.5">Payment History</p>
+                          {paymentHistory.length === 0 ? (
+                            <p className="text-[10px] text-slate-400 py-2">No payments yet</p>
+                          ) : (
+                            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                              {paymentHistory.map(p => (
+                                <div key={p.id} className="flex items-center justify-between rounded-lg p-2" style={{ backgroundColor: theme.surfaceBg }}>
+                                  <div>
+                                    <p className="text-[10px] font-medium text-slate-700">Paid from {p.paidFrom}</p>
+                                    <p className="text-[9px] text-slate-400">{p.date} {p.time && `· ${p.time}`}</p>
+                                  </div>
+                                  <span className="text-xs font-bold text-green-600">-{formatCurrency(p.amount)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
@@ -399,11 +444,37 @@ export default function WalletPage() {
                       </div>
 
                       {lib.notes && <p className="text-[10px] text-slate-400 mt-1 italic">"{lib.notes}"</p>}
-                      {lib.remainingAmount > 0 && (
-                        <button onClick={() => setShowPayModal({ type: 'liability', id: lib.id, name: lib.name, balance: lib.remainingAmount })}
-                          className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
-                          Make Payment
+                      <div className="flex gap-2 mt-2">
+                        {lib.remainingAmount > 0 && (
+                          <button onClick={() => setShowPayModal({ type: 'liability', id: lib.id, name: lib.name, balance: lib.remainingAmount })}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
+                            Make Payment
+                          </button>
+                        )}
+                        <button onClick={() => toggleHistory(lib.id)}
+                          className="py-2 px-3 rounded-xl text-xs font-medium border flex items-center gap-1" style={{ borderColor: theme.primary + '40', color: theme.primary }}>
+                          <History size={12} /> {showHistory === lib.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                         </button>
+                      </div>
+                      {showHistory === lib.id && (
+                        <div className="mt-2 pt-2 border-t border-slate-100">
+                          <p className="text-[10px] font-semibold text-slate-500 mb-1.5">Payment History</p>
+                          {paymentHistory.length === 0 ? (
+                            <p className="text-[10px] text-slate-400 py-2">No payments yet</p>
+                          ) : (
+                            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                              {paymentHistory.map(p => (
+                                <div key={p.id} className="flex items-center justify-between rounded-lg p-2" style={{ backgroundColor: theme.surfaceBg }}>
+                                  <div>
+                                    <p className="text-[10px] font-medium text-slate-700">Paid from {p.paidFrom}</p>
+                                    <p className="text-[9px] text-slate-400">{p.date} {p.time && `· ${p.time}`}</p>
+                                  </div>
+                                  <span className="text-xs font-bold text-green-600">-{formatCurrency(p.amount)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

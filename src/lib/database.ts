@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Transaction, BudgetCategory, SavingsGoal, GoalTransaction, Account, Liability, MonthlyIncome } from './types';
+import { Transaction, BudgetCategory, SavingsGoal, GoalTransaction, Account, Liability, PaymentRecord, MonthlyIncome } from './types';
 
 // ---- ACCOUNTS ----
 export async function getAccounts(): Promise<Account[]> {
@@ -67,6 +67,28 @@ export async function updateLiability(id: string, updates: Partial<{ name: strin
 
 export async function deleteLiability(id: string) {
   await supabase.from('liabilities').delete().eq('id', id);
+}
+
+// ---- PAYMENT HISTORY ----
+export async function getPaymentHistory(targetId?: string): Promise<PaymentRecord[]> {
+  let query = supabase.from('payment_history').select('*').order('date', { ascending: false });
+  if (targetId) query = query.eq('target_id', targetId);
+  const { data } = await query;
+  return (data || []).map(r => ({
+    id: r.id, targetType: r.target_type, targetId: r.target_id,
+    targetName: r.target_name || '', amount: Number(r.amount),
+    paidFrom: r.paid_from || '', date: r.date, time: r.time || '',
+  }));
+}
+
+export async function addPaymentRecord(record: Omit<PaymentRecord, 'id'>): Promise<void> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return;
+  await supabase.from('payment_history').insert({
+    user_id: user.id, target_type: record.targetType, target_id: record.targetId,
+    target_name: record.targetName, amount: record.amount,
+    paid_from: record.paidFrom, date: record.date, time: record.time,
+  });
 }
 
 // ---- TRANSACTIONS ----
