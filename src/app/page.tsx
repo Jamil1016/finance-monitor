@@ -36,6 +36,7 @@ export default function Dashboard() {
   const [showFab, setShowFab] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [accountsExpanded, setAccountsExpanded] = useState(false);
   const [accName, setAccName] = useState('');
   const [accBalance, setAccBalance] = useState('');
   const [accCreditLimit, setAccCreditLimit] = useState('');
@@ -170,36 +171,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Accounts grid - sorted: cash, ewallet, bank, credit_card */}
-      {accounts.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {[...accounts].sort((a, b) => {
-            const order: Record<string, number> = { cash: 0, ewallet: 1, bank: 2, credit_card: 3 };
-            return (order[a.type] ?? 4) - (order[b.type] ?? 4);
-          }).map(a => {
-            const isCC = a.type === 'credit_card';
-            return (
-              <div key={a.id} className="rounded-2xl p-3 card-white" style={isCC ? { border: '1px solid #fecaca' } : {}}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-base">{a.icon || '🏦'}</span>
-                  <span className="text-[10px] font-medium text-slate-500 truncate">{a.name}</span>
-                </div>
-                <p className={`text-base font-bold ${isCC ? 'text-red-500' : 'text-slate-900'}`}>
-                  {isCC ? '-' : ''}{formatCurrency(a.balance)}
-                </p>
-                {isCC && a.creditLimit > 0 && (
-                  <p className="text-[9px] text-slate-400">Limit: {formatCurrency(a.creditLimit)}</p>
-                )}
-              </div>
-            );
-          })}
-          <button onClick={() => setShowAddAccount(true)} className="rounded-2xl p-3 flex flex-col items-center justify-center border border-dashed gap-1" style={{ borderColor: theme.primary + '40' }}>
-            <Plus size={18} style={{ color: theme.primary }} />
-            <span className="text-[10px] font-medium" style={{ color: theme.primary }}>Add Account</span>
-          </button>
-        </div>
-      )}
-
       {/* Hero Card - FinWise Style */}
       <div className="rounded-3xl p-5 text-white" style={{ background: `linear-gradient(135deg, ${theme.headerGradient[0]}, ${theme.headerGradient[1]})` }}>
         <div className="flex items-center justify-between mb-4">
@@ -251,6 +222,45 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Accounts Accordion */}
+      {accounts.length > 0 && (
+        <div className="card-white overflow-hidden">
+          <button onClick={() => setAccountsExpanded(!accountsExpanded)} className="w-full flex items-center justify-between p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-base">💰</span>
+              <span className="text-xs font-bold text-slate-900">My Accounts ({accounts.length})</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold" style={{ color: theme.primary }}>{formatCurrency(totalBalance)}</span>
+              <ChevronRight size={14} className={`text-slate-400 transition-transform ${accountsExpanded ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+          {accountsExpanded && (
+            <div className="px-4 pb-4 space-y-2">
+              {[...accounts].sort((a, b) => {
+                const order: Record<string, number> = { cash: 0, ewallet: 1, bank: 2, credit_card: 3 };
+                return (order[a.type] ?? 4) - (order[b.type] ?? 4);
+              }).map(a => {
+                const isCC = a.type === 'credit_card';
+                return (
+                  <div key={a.id} className="flex items-center gap-3 p-2.5 rounded-xl" style={{ backgroundColor: isCC ? '#fef2f2' : theme.surfaceBg }}>
+                    <span className="text-base">{a.icon || '🏦'}</span>
+                    <span className="text-xs font-medium text-slate-700 flex-1 truncate">{a.name}</span>
+                    <span className={`text-sm font-bold ${isCC ? 'text-red-500' : 'text-slate-900'}`}>
+                      {isCC ? '-' : ''}{formatCurrency(a.balance)}
+                    </span>
+                  </div>
+                );
+              })}
+              <button onClick={() => setShowAddAccount(true)} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed" style={{ borderColor: theme.primary + '40' }}>
+                <Plus size={14} style={{ color: theme.primary }} />
+                <span className="text-[10px] font-medium" style={{ color: theme.primary }}>Add Account</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Period Selector */}
       <TimeTabs active={period} onChange={setPeriod} tabs={['Daily', 'Weekly', 'Monthly', 'Year']} />
