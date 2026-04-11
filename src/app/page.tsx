@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, TrendingUp, TrendingDown, Wallet, CreditCard, ArrowRight, Palette, LogOut, ArrowUpRight, ArrowDownRight, DollarSign, PiggyBank } from 'lucide-react';
 import Link from 'next/link';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, Cell, AreaChart, Area,
 } from 'recharts';
+import Tip2 from '@/components/ui/Tooltip';
 import { Transaction, Account, SavingsGoal, BudgetCategory } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
@@ -191,7 +192,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center"><ArrowUpRight size={14} className="text-red-500" /></div>
+            <Tip2 text="Total expenses for the selected period"><div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center"><ArrowUpRight size={14} className="text-red-500" /></div></Tip2>
             <span className="text-[10px] text-slate-400 font-medium uppercase">Expenses</span>
           </div>
           <p className="text-lg font-bold text-red-500">{formatCurrency(expenses)}</p>
@@ -204,7 +205,7 @@ export default function Dashboard() {
 
         <div className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center"><ArrowDownRight size={14} className="text-green-500" /></div>
+            <Tip2 text="Total income received this period"><div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center"><ArrowDownRight size={14} className="text-green-500" /></div></Tip2>
             <span className="text-[10px] text-slate-400 font-medium uppercase">Income</span>
           </div>
           <p className="text-lg font-bold text-green-600">{income > 0 ? formatCurrency(income) : '--'}</p>
@@ -212,7 +213,7 @@ export default function Dashboard() {
 
         <div className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}><DollarSign size={14} style={{ color: theme.primary }} /></div>
+            <Tip2 text="Income minus expenses. Positive = you earned more than you spent"><div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.primaryBg }}><DollarSign size={14} style={{ color: theme.primary }} /></div></Tip2>
             <span className="text-[10px] text-slate-400 font-medium uppercase">Cash Flow</span>
           </div>
           <p className={`text-lg font-bold ${cashFlow >= 0 ? 'text-green-600' : 'text-red-500'}`}>{cashFlow !== 0 ? formatCurrency(cashFlow) : '--'}</p>
@@ -220,7 +221,7 @@ export default function Dashboard() {
 
         <div className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center"><PiggyBank size={14} className="text-blue-500" /></div>
+            <Tip2 text="Remaining monthly budget. Daily shows how much you can spend per day"><div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center"><PiggyBank size={14} className="text-blue-500" /></div></Tip2>
             <span className="text-[10px] text-slate-400 font-medium uppercase">Budget Left</span>
           </div>
           <p className={`text-lg font-bold ${monthRemaining >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatCurrency(monthRemaining)}</p>
@@ -266,7 +267,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-                <Tooltip content={<Tip />} />
+                <RTooltip content={<Tip />} />
                 <Area type="monotone" dataKey="income" stroke="#22c55e" fill="url(#ig)" strokeWidth={2} name="Income" />
                 <Area type="monotone" dataKey="expenses" stroke="#ef4444" fill="url(#eg)" strokeWidth={2} name="Expenses" />
               </AreaChart>
@@ -305,7 +306,7 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-              <Tooltip content={<Tip />} />
+              <RTooltip content={<Tip />} />
               <Bar dataKey="amount" radius={[4, 4, 0, 0]} name="Spent">
                 {weeklyData.map((e, i) => (
                   <Cell key={i} fill={e.amount > dailyBudget && dailyBudget > 0 ? '#ef4444' : theme.primary} fillOpacity={i === weeklyData.length - 1 ? 1 : 0.5} />

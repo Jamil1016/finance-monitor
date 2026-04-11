@@ -27,15 +27,32 @@ const categoryStyles: Record<string, { bg: string; icon: string; iconName: strin
   'Gift':              { bg: '#fef3c7', icon: '#f59e0b', iconName: 'Gift' },
 };
 
+const categoryDescriptions: Record<string, string> = {
+  'Food & Groceries': 'Meals, groceries, snacks, dining out',
+  'Utilities & Phone': 'Electric, water, internet, phone plan',
+  'Personal Care': 'Toiletries, haircut, skincare',
+  'Social & Leisure': 'Hangouts, events, entertainment',
+  'Health': 'Medicine, doctor visits, gym',
+  'Shopping': 'Clothes, gadgets, household items',
+  'Subscriptions': 'Streaming, apps, memberships',
+  'Miscellaneous': 'Other uncategorized expenses',
+  'Income': 'Money received',
+  'Salary': 'Employment compensation',
+  'Transport': 'Commute, fuel, parking',
+  'Gift': 'Gifts given or received',
+};
+
 interface CategoryIconProps {
   category: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  showTooltip?: boolean;
 }
 
-export default function CategoryIcon({ category, size = 'md', className = '' }: CategoryIconProps) {
+export default function CategoryIcon({ category, size = 'md', className = '', showTooltip = false }: CategoryIconProps) {
   const style = categoryStyles[category] || { bg: '#f1f5f9', icon: '#64748b', iconName: 'CircleDot' };
   const IconComponent = iconMap[style.iconName] || CircleDot;
+  const desc = categoryDescriptions[category] || category;
 
   const sizes = {
     sm: { container: 'w-8 h-8', icon: 14 },
@@ -45,14 +62,17 @@ export default function CategoryIcon({ category, size = 'md', className = '' }: 
 
   const s = sizes[size];
 
-  return (
+  const icon = (
     <div
       className={`${s.container} rounded-full flex items-center justify-center shrink-0 ${className}`}
       style={{ backgroundColor: style.bg }}
+      title={desc}
     >
       <IconComponent size={s.icon} style={{ color: style.icon }} />
     </div>
   );
+
+  return icon;
 }
 
 export { categoryStyles };
