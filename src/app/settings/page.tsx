@@ -111,7 +111,7 @@ export default function SettingsPage() {
         <MenuItem icon={LogOut} label="Log Out" desc="Sign out of your account" onClick={signOut} />
       </div>
 
-      <p className="text-center text-[10px] text-slate-400 pt-4">FinTrack v1.0 · Built with Next.js + Supabase</p>
+      <p className="text-center text-[10px] text-slate-400 pt-4">FinTrack v1.0 · Built by Jamil Mendez</p>
 
       {/* Change Password Modal */}
       {showChangePw && (
