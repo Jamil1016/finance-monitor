@@ -143,8 +143,31 @@ export default function ExpensesPage() {
     const amt = parseFloat(amount);
 
     if (editingTx) {
+      const oldAmount = editingTx.amount;
+      const diff = amt - oldAmount;
+
       await db.updateTransaction(editingTx.id, { amount: amt, category, description: description || category, type: txType, date });
       setAllTransactions(prev => prev.map(t => t.id === editingTx.id ? { ...t, amount: amt, category, description: description || category, type: txType, date } : t));
+
+      // Adjust account balance: add back old amount, deduct new amount
+      // Only if there's a linked account and the amount changed
+      if (payFrom && diff !== 0) {
+        const acc = accounts.find(a => a.id === payFrom);
+        if (acc) {
+          const isCreditCard = acc.type === 'credit_card';
+          // For expense: account was reduced by oldAmount, now needs to be reduced by amt instead
+          // So adjust by the difference
+          let newBal: number;
+          if (isCreditCard) {
+            newBal = acc.balance + diff; // CC: more expense = more debt
+          } else {
+            newBal = acc.balance - diff; // Regular: more expense = less balance
+          }
+          await db.updateAccountBalance(payFrom, newBal);
+          setAccounts(prev => prev.map(a => a.id === payFrom ? { ...a, balance: newBal } : a));
+        }
+      }
+
       setEditingTx(null);
       setAmount(''); setDescription(''); setShowModal(false); setTxType('expense'); setPayFrom('');
       return;
