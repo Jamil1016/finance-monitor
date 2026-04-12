@@ -31,26 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let inactivityTimer: NodeJS.Timeout;
-
-    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-
-    const resetInactivityTimer = () => {
-      if (inactivityTimer) clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(async () => {
-        // Auto-logout after 30 min inactivity
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (currentSession) {
-          await supabase.auth.signOut();
-        }
-      }, INACTIVITY_TIMEOUT);
-    };
-
-    // Track user activity
-    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
-    events.forEach(e => window.addEventListener(e, resetInactivityTimer));
-    resetInactivityTimer();
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
         setSession(session);
@@ -71,8 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
-      events.forEach(e => window.removeEventListener(e, resetInactivityTimer));
-      if (inactivityTimer) clearTimeout(inactivityTimer);
       subscription.unsubscribe();
     };
   }, []);
