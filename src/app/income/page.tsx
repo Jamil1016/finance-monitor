@@ -5,7 +5,7 @@ import { Calculator, Upload, Camera, Loader2, Check, Plus, Trash2, FileText, Pen
 import { MonthlyIncome } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency } from '@/lib/utils';
 
 export default function IncomePage() {

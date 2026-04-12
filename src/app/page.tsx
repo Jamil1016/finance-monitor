@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Respon
 import { Transaction, Account, SavingsGoal, BudgetCategory } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency, formatAmount, formatShortDate, getCurrentMonth, getGreeting, getDaysRemaining, EXPENSE_CATEGORIES, CATEGORY_COLORS } from '@/lib/utils';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import DonutChart from '@/components/ui/DonutChart';

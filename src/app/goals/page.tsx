@@ -5,7 +5,7 @@ import { Plus, Target, Trash2, Check, X, ChevronDown, ChevronUp, ArrowDown, Arro
 import { SavingsGoal, GoalTransaction, GoalCategory, GOAL_CATEGORIES, GOAL_TEMPLATES } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency, formatShortDate, getDaysRemaining } from '@/lib/utils';
 
 function getMilestone(pct: number): { label: string; next: number; emoji: string } | null {

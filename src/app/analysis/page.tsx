@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Respon
 import { Transaction } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency, getCurrentMonth, CATEGORY_COLORS } from '@/lib/utils';
 import TimeTabs from '@/components/ui/TimeTabs';
 import DonutChart from '@/components/ui/DonutChart';

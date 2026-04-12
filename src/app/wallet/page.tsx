@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Account, Liability, PaymentRecord, ACCOUNT_ICONS } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency, getDaysRemaining } from '@/lib/utils';
 
 export default function WalletPage() {

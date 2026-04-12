@@ -5,7 +5,7 @@ import { Plus, Trash2, AlertTriangle, TrendingDown, Clock, Check, X } from 'luci
 import { BudgetCategory } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency, getCurrentMonth, getMonthName, CATEGORY_COLORS } from '@/lib/utils';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import DonutChart from '@/components/ui/DonutChart';

@@ -5,7 +5,7 @@ import { Plus, ChevronLeft, ChevronRight, Trash2, Pencil, TrendingDown, Trending
 import { Transaction, Account } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import * as db from '@/lib/database';
+import * as db from '@/lib/offline-db';
 import { formatCurrency, formatShortDate, getCurrentMonth, getMonthName, EXPENSE_CATEGORIES, CATEGORY_COLORS } from '@/lib/utils';
 import CategoryIcon from '@/components/ui/CategoryIcon';
 import DonutChart from '@/components/ui/DonutChart';

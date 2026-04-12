@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import AuthGuard from './AuthGuard';
 import ThemePicker from './ThemePicker';
+import OfflineStatus from './OfflineStatus';
 
 const PUBLIC_ROUTES = ['/login', '/signup'];
 
@@ -26,6 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </main>
           <BottomNav />
           <ThemePicker />
+          <OfflineStatus />
         </div>
       ) : (
         children
